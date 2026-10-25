@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+ <head> 
+  <meta charset="UTF-8"> 
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"> 
+  <title>个人主页</title> 
+  <link rel="stylesheet" href="style.css"> 
+  <script src="js/jq.js"></script> 
+ </head> 
+ <body id="v1" style=""> 
+  <video id="background-video" autoplay="" muted="" loop="" playsinline=""> 
+   <source id="v2" src="1.mp4" type="video/mp4"> 
+  </video> 
+  <div id="v3" class="screen-mask"></div> 
+  <div id="v4" class="floating-orb orb-pink"></div> 
+  <div id="v5" class="floating-orb orb-blue"></div> 
+  <div id="v6" class="floating-orb orb-green"></div> 
+  <div id="v7" class="layout-wrapper"> 
+   <button class="menu-toggle" id="menuToggle" aria-label="切换菜单"> <span id="v8"></span><span id="v9"> </span><span id="v10"></span> </button> 
+   <div class="sidebar-overlay" id="sidebarOverlay"></div> 
+   <aside class="side-panel" id="sidePanel"> 
+    <header id="v11" class="panel-header"> 
+     <div id="v12" class="panel-avatar"> 
+      <video id="v13" autoplay="" muted="" loop="" playsinline=""> 
+       <source id="v14" src="1.mp4" type="video/mp4"> 
+      </video> 
+      <span id="v15" class="online-badge"></span> 
+     </div> 
+     <span id="v16" class="panel-nickname">刘亮亮</span> 
+     <span id="v17" class="panel-title">业余开发者</span> 
+    </header> 
+    <nav id="v18" class="page-nav"> 
+     <button id="v19" class="nav-entry" data-section="home"> 
+      <svg id="v20" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"> 
+       <path id="v21" d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path> 
+       <polyline id="v22" points="9 22 9 12 15 12 15 22"></polyline> 
+      </svg> <span id="v23">首页</span> </button> 
+     <button id="v24" class="nav-entry" data-section="about"> 
+      <svg id="v25" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"> 
+       <path id="v26" d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path> 
+       <circle id="v27" cx="12" cy="7" r="4"></circle> 
+      </svg> <span id="v28">关于我</span> </button> 
+     <button id="v29" class="nav-entry" data-section="skills"> 
+      <svg id="v30" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"> 
+       <path id="v31" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path> 
+      </svg> <span id="v32">技能</span> </button> 
+     <button id="v33" class="nav-entry" data-section="projects"> 
+      <svg id="v34" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"> 
+       <rect id="v35" x="2" y="3" width="20" height="14" rx="2" ry="2"></rect> 
+       <line id="v36" x1="8" y1="21" x2="16" y2="21"></line> 
+       <line id="v37" x1="12" y1="17" x2="12" y2="21"></line> 
+      </svg> <span id="v38">作品集</span> </button> 
+     <button id="v39" class="nav-entry active" data-section="contact"> 
+      <svg id="v40" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"> 
+       <path id="v41" d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path> 
+       <polyline id="v42" points="22,6 12,13 2,6"></polyline> 
+      </svg> <span id="v43">联系方式</span> </button> 
+     <button id="v44" class="nav-entry" data-section="links"> 
+      <svg id="v45" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"> 
+       <path id="v46" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path> 
+       <path id="v47" d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path> 
+      </svg> <span id="v48">友情链接</span> </button> 
+    </nav> 
+    <footer id="v49" class="panel-footer"> 
+     <button class="viz-toggle" id="vizSwitcher"> 
+      <svg id="v50" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"> 
+       <rect id="v51" x="3" y="3" width="18" height="18" rx="2"></rect> 
+       <line id="v52" x1="9" y1="9" x2="9" y2="15"></line> 
+       <line id="v53" x1="15" y1="7" x2="15" y2="17"></line> 
+       <line id="v54" x1="12" y1="11" x2="12" y2="13"></line> 
+      </svg> <span id="v55">可视化</span> </button> 
+     <span id="v56" class="live-indicator"></span> 
+     <span id="v57">在线 · 1人在看</span> 
+    </footer> 
+   </aside> 
+   <main id="v58" class="main-stage"> 
+    <section class="stage" id="section-home"> 
+     <div id="v59" class="welcome-area"> 
+      <div id="v60" class="avatar-cluster"> 
+       <canvas id="musicViz" class="music-viz" width="300" height="60"></canvas> 
+       <div id="v61" class="avatar-frame"> 
+        <div id="v62" class="avatar-ring"></div> 
+        <video id="v63" autoplay="" muted="" loop="" playsinline=""> 
+         <source id="v64" src="1.mp4" type="video/mp4"> 
+        </video> 
+       </div> 
+       <div id="v65" class="avatar-aura"></div> 
+      </div> 
+      <h1 id="v66" class="user-name">刘亮亮</h1> 
+      <p class="user-slogan" id="typewriter">全栈开</p> 
+      <p id="v67" class="user-brief">热爱技术，乐于分享 · 热爱计算机</p> 
+      <div id="v68" class="stats-row"> 
+       <div id="v69" class="stats-cell"> 
+        <span id="v70" class="stats-figure">5+</span> 
+        <span id="v71" class="stats-unit">项目</span> 
+       </div> 
+       <div id="v72" class="stats-cell"> 
+        <span id="v73" class="stats-figure">3年</span> 
+        <span id="v74" class="stats-unit">经验</span> 
+       </div> 
+       <div id="v75" class="stats-cell"> 
+        <span id="v76" class="stats-figure">50+</span> 
+        <span id="v77" class="stats-unit">开源贡献</span> 
+       </div> 
+       <div id="v78" class="stats-cell"> 
+        <span id="v79" class="stats-figure">2k</span> 
+        <span id="v80" class="stats-unit">订阅</span> 
+       </div> 
+      </div> 
+      <div id="v81" class="action-group"> 
+       <button class="action-primary" id="learnMore">了解更多</button> 
+       <button class="action-secondary" id="contactMe">联系我</button> 
+      </div> 
+      <div class="daily-quote" id="quoteContainer"> 
+       <span id="v82" class="quote-mark">"</span> 
+       <p class="quote-body" id="quoteBody">—</p> 
+       <p class="quote-source" id="quoteSource">罗曼·罗兰</p> 
+      </div> 
+     </div> 
+    </section> 
+    <section class="stage" id="section-about"> 
+     <div id="v83" class="stage-container"> 
+      <header id="v84" class="stage-header"> 
+       <span id="v85" class="stage-icon">👤</span> 
+       <h2 id="v86" class="stage-title">关于我</h2> 
+      </header> 
+      <div id="v87" class="stage-divider"></div> 
+      <article id="v88" class="bio-card"> 
+       <div id="v89" class="bio-content"> 
+        <p id="v90">你好！👋 我是一名业余开发者，热衷于构建优雅、高性能的 Web 网页。</p> 
+        <p id="v91">从大学开始接触编程，非常喜欢写出有趣的网页。</p> 
+        <p id="v92">工作之余喜欢研究新技术、参与开源项目、写技术博客分享知识。我相信好的代码不仅是功能实现，更是艺术与技术结合的产物。</p> 
+       </div> 
+      </article> 
+      <div id="v93" class="meta-grid"> 
+       <div id="v94" class="meta-cell"> 
+        <span id="v95" class="meta-emoji">📍</span> 
+        <div id="v96"> 
+         <span id="v97" class="meta-key">现居</span> 
+         <span id="v98" class="meta-val">中国 · 辽宁</span> 
+        </div> 
+       </div> 
+       <div id="v99" class="meta-cell"> 
+        <span id="v100" class="meta-emoji">💼</span> 
+        <div id="v101"> 
+         <span id="v102" class="meta-key">职位</span> 
+         <span id="v103" class="meta-val">不方便透露</span> 
+        </div> 
+       </div> 
+       <div id="v104" class="meta-cell"> 
+        <span id="v105" class="meta-emoji">🎓</span> 
+        <div id="v106"> 
+         <span id="v107" class="meta-key">学历</span> 
+         <span id="v108" class="meta-val">计算机本科</span> 
+        </div> 
+       </div> 
+       <div id="v109" class="meta-cell"> 
+        <span id="v110" class="meta-emoji">🌐</span> 
+        <div id="v111"> 
+         <span id="v112" class="meta-key">语言</span> 
+         <span id="v113" class="meta-val">中文 / English</span> 
+        </div> 
+       </div> 
+      </div> 
+     </div> 
+    </section> 
+    <section class="stage" id="section-skills"> 
+     <div id="v114" class="stage-container"> 
+      <header id="v115" class="stage-header"> 
+       <span id="v116" class="stage-icon">⚡</span> 
+       <h2 id="v117" class="stage-title">技能</h2> 
+      </header> 
+      <div id="v118" class="stage-divider"></div> 
+      <div id="v119" class="skill-panel"> 
+       <div id="v120" class="skill-group"> 
+        <div id="v121" class="skill-group-header"> 
+         <span id="v122" class="skill-emoji">🎨</span> 
+         <h3 id="v123">前端开发</h3> 
+        </div> 
+        <div id="v124" class="skill-row"> 
+         <span id="v125" class="skill-label">HTML/CSS</span> 
+         <div id="v126" class="skill-track"> 
+          <div id="v127" class="skill-fill" style="width:95%"></div> 
+         </div> 
+         <span id="v128" class="skill-pct">95%</span> 
+        </div> 
+        <div id="v129" class="skill-row"> 
+         <span id="v130" class="skill-label">JavaScript/TS</span> 
+         <div id="v131" class="skill-track"> 
+          <div id="v132" class="skill-fill" style="width:90%"></div> 
+         </div> 
+         <span id="v133" class="skill-pct">90%</span> 
+        </div> 
+        <div id="v134" class="skill-row"> 
+         <span id="v135" class="skill-label">React/Next.js</span> 
+         <div id="v136" class="skill-track"> 
+          <div id="v137" class="skill-fill" style="width:85%"></div> 
+         </div> 
+         <span id="v138" class="skill-pct">85%</span> 
+        </div> 
+        <div id="v139" class="skill-row"> 
+         <span id="v140" class="skill-label">Vue.js</span> 
+         <div id="v141" class="skill-track"> 
+          <div id="v142" class="skill-fill" style="width:75%"></div> 
+         </div> 
+         <span id="v143" class="skill-pct">75%</span> 
+        </div> 
+       </div> 
+       <div id="v144" class="skill-group"> 
+        <div id="v145" class="skill-group-header"> 
+         <span id="v146" class="skill-emoji">⚙️</span> 
+         <h3 id="v147">wps办公</h3> 
+        </div> 
+        <div id="v148" class="skill-row"> 
+         <span id="v149" class="skill-label">WPS文字</span> 
+         <div id="v150" class="skill-track"> 
+          <div id="v151" class="skill-fill" style="width:88%"></div> 
+         </div> 
+         <span id="v152" class="skill-pct">88%</span> 
+        </div> 
+        <div id="v153" class="skill-row"> 
+         <span id="v154" class="skill-label">WPS表格</span> 
+         <div id="v155" class="skill-track"> 
+          <div id="v156" class="skill-fill" style="width:80%"></div> 
+         </div> 
+         <span id="v157" class="skill-pct">80%</span> 
+        </div> 
+        <div id="v158" class="skill-row"> 
+         <span id="v159" class="skill-label">WPS演示</span> 
+         <div id="v160" class="skill-track"> 
+          <div id="v161" class="skill-fill" style="width:82%"></div> 
+         </div> 
+         <span id="v162" class="skill-pct">82%</span> 
+        </div> 
+       </div> 
+       <div id="v163" class="skill-group"> 
+        <div id="v164" class="skill-group-header"> 
+         <span id="v165" class="skill-emoji">🛠️</span> 
+         <h3 id="v166">计算机基础</h3> 
+        </div> 
+        <div id="v167" class="skill-row"> 
+         <span id="v168" class="skill-label">硬件与系统基础</span> 
+         <div id="v169" class="skill-track"> 
+          <div id="v170" class="skill-fill" style="width:92%"></div> 
+         </div> 
+         <span id="v171" class="skill-pct">92%</span> 
+        </div> 
+        <div id="v172" class="skill-row"> 
+         <span id="v173" class="skill-label">网络与信息安全</span> 
+         <div id="v174" class="skill-track"> 
+          <div id="v175" class="skill-fill" style="width:72%"></div> 
+         </div> 
+         <span id="v176" class="skill-pct">72%</span> 
+        </div> 
+        <div id="v177" class="skill-row"> 
+         <span id="v178" class="skill-label">系统维护</span> 
+         <div id="v179" class="skill-track"> 
+          <div id="v180" class="skill-fill" style="width:78%"></div> 
+         </div> 
+         <span id="v181" class="skill-pct">78%</span> 
+        </div> 
+       </div> 
+      </div> 
+     </div> 
+    </section> 
+    <section class="stage" id="section-projects"> 
+     <div id="v182" class="stage-container"> 
+      <header id="v183" class="stage-header"> 
+       <span id="v184" class="stage-icon">📁</span> 
+       <h2 id="v185" class="stage-title">作品集</h2> 
+      </header> 
+      <div id="v186" class="stage-divider"></div> 
+      <div id="v187" class="project-wall"> 
+       <article id="v188" class="project-entry"> 
+        <div id="v189" class="project-banner" style="background:linear-gradient(135deg,#667eea,#764ba2)"> 
+         <span id="v190" class="project-idx">01</span> 
+        </div> 
+        <div id="v191" class="project-detail"> 
+         <h3 id="v192">网吧价格表</h3> 
+         <p id="v193">实时显示价格，支持局域网后台管理。</p> 
+         <div id="v194" class="project-tags"> 
+          <span id="v195">HTML</span> 
+          <span id="v196">JS</span> 
+          <span id="v197">p2p</span> 
+         </div> 
+         <div id="v198" class="project-actions"> 
+          <a id="v199" href="jgb.html" class="project-link">查看详情 →</a> 
+          <a id="v200" href="" class="project-link">.</a> 
+         </div> 
+        </div> 
+       </article> 
+       <article id="v201" class="project-entry"> 
+        <div id="v202" class="project-banner" style="background:linear-gradient(135deg,#f093fb,#f5576c)"> 
+         <span id="v203" class="project-idx">02</span> 
+        </div> 
+        <div id="v204" class="project-detail"> 
+         <h3 id="v205">TV电视直播</h3> 
+         <p id="v206">一款优雅的移动端/TV端，电视直播工具，专注于用户体验与交互流畅度。</p> 
+         <div id="v207" class="project-tags"> 
+          <span id="v208">TV</span> 
+          <span id="v209">2.0</span> 
+          <span id="v210">app</span> 
+         </div> 
+         <div id="v211" class="project-actions"> 
+          <a id="v212" href="https://qr61.cn/oVea31/qx1dvV1" class="project-link">查看详情 →</a> 
+          <a id="v213" href="#" class="project-link">获取卡密请联系作者</a> 
+         </div> 
+        </div> 
+       </article> 
+       <article id="v214" class="project-entry"> 
+        <div id="v215" class="project-banner" style="background:linear-gradient(135deg,#4facfe,#00f2fe)"> 
+         <span id="v216" class="project-idx">03</span> 
+        </div> 
+        <div id="v217" class="project-detail"> 
+         <h3 id="v218">音乐网</h3> 
+         <p id="v219">用于网页下载音乐听歌。</p> 
+         <div id="v220" class="project-tags"> 
+          <span id="v221">Music</span> 
+          <span id="v222">HTML</span> 
+          <span id="v223">js</span> 
+         </div> 
+         <div id="v224" class="project-actions"> 
+          <a id="v225" href="https://page.goose.cc.cd/s/My-music" class="project-link">查看详情 →</a> 
+          <a id="v226" href="#" class="project-link">仅用于学习交流，访问密码是当前北京时间</a> 
+         </div> 
+        </div> 
+       </article> 
+       <article id="v227" class="project-entry"> 
+        <div id="v228" class="project-banner" style="background:linear-gradient(135deg,#43e97b,#38f9d7)"> 
+         <span id="v229" class="project-idx">04</span> 
+        </div> 
+        <div id="v230" class="project-detail"> 
+         <h3 id="v231">-</h3> 
+         <p id="v232">-</p> 
+         <div id="v233" class="project-tags"> 
+          <span id="v234">-</span> 
+          <span id="v235">-</span> 
+          <span id="v236">-</span> 
+         </div> 
+         <div id="v237" class="project-actions"> 
+          <a id="v238" href="#" class="project-link">-</a> 
+          <a id="v239" href="#" class="project-link">-</a> 
+         </div> 
+        </div> 
+       </article> 
+      </div> 
+     </div> 
+    </section> 
+    <section class="stage active" id="section-contact"> 
+     <div id="v240" class="stage-container"> 
+      <header id="v241" class="stage-header"> 
+       <span id="v242" class="stage-icon">📫</span> 
+       <h2 id="v243" class="stage-title">联系方式</h2> 
+      </header> 
+      <div id="v244" class="stage-divider"></div> 
+      <p id="v245" class="stage-hint">欢迎通过以下方式与我取得联系</p> 
+      <div id="v246" class="contact-wall"> 
+       <a id="v247" href="mailto:2393534802@qq.com" class="contact-entry" data-type="mail"> <span id="v248" class="contact-icon"> 
+         <svg id="v249" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"> 
+          <path id="v250" d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path> 
+          <polyline id="v251" points="22,6 12,13 2,6"></polyline> 
+         </svg></span> <span id="v252" class="contact-name">邮箱</span> <span id="v253" class="contact-addr">2393534802@qq.com</span> </a> 
+       <a id="v254" href="https://github.com/2383534802" target="_blank" class="contact-entry" data-type="github"> <span id="v255" class="contact-icon"> 
+         <svg id="v256" viewbox="0 0 24 24" fill="currentColor"> 
+          <path id="v257" d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path> 
+         </svg></span> <span id="v258" class="contact-name">GitHub</span> <span id="v259" class="contact-addr">2383534802</span> </a> 
+       <a id="v260" href="https://qm.qq.com/q/cY27z3sth0" target="_blank" class="contact-entry" data-type="weibo"> <span id="v261" class="contact-icon"> 
+         <svg id="v262" viewbox="0 0 24 24" fill="currentColor"> 
+          <path id="v263" d="M10.098 20.323c-3.977.391-7.414-1.406-7.672-4.02-.259-2.609 2.759-5.047 6.74-5.441 3.979-.394 7.413 1.404 7.671 4.018.259 2.6-2.759 5.049-6.739 5.443z"></path> 
+         </svg></span> <span id="v264" class="contact-name">QQ</span> <span id="v265" class="contact-addr">2393534802</span> </a> 
+       <a id="v266" href="https://b23.tv/QBoaeb7" target="_blank" class="contact-entry" data-type="bilibili"> <span id="v267" class="contact-icon"> 
+         <svg id="v268" viewbox="0 0 24 24" fill="currentColor"> 
+          <path id="v269" d="M17.813 4.653h.854c1.51.054 2.769.578 3.773 1.574 1.004.995 1.524 2.249 1.56 3.76v7.36c-.036 1.51-.556 2.769-1.56 3.773s-2.262 1.524-3.773 1.56H5.333c-1.51-.036-2.769-.556-3.773-1.56S.036 18.858 0 17.347v-7.36c.036-1.511.556-2.765 1.56-3.76 1.004-.996 2.262-1.52 3.773-1.574h.774l-1.174-1.12a1.234 1.234 0 0 1-.373-.906c0-.356.124-.658.373-.907l.027-.027c.267-.249.573-.373.92-.373.347 0 .662.124.947.373L8.08 4.653h7.84l1.413-1.347c.267-.249.573-.373.92-.373.347 0 .662.124.947.373l.026.027c.267.249.4.551.4.907 0 .355-.133.657-.4.906l-1.413 1.12z"></path> 
+         </svg></span> <span id="v270" class="contact-name">B站</span> <span id="v271" class="contact-addr">莹的boy</span> </a> 
+       <a id="v272" href="https://twitter.com/your" target="_blank" class="contact-entry" data-type="twitter"> <span id="v273" class="contact-icon"> 
+         <svg id="v274" viewbox="0 0 24 24" fill="currentColor"> 
+          <path id="v275" d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"></path> 
+         </svg></span> <span id="v276" class="contact-name">Twitter</span> <span id="v277" class="contact-addr">@yourhandle</span> </a> 
+       <a id="v278" href="#" target="_blank" class="contact-entry" data-type="wechat"> <span id="v279" class="contact-icon"> 
+         <svg id="v280" viewbox="0 0 24 24" fill="currentColor"> 
+          <path id="v281" d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348z"></path> 
+         </svg></span> <span id="v282" class="contact-name">微信</span> <span id="v283" class="contact-addr">MrLiu-8888888888</span> </a> 
+      </div> 
+     </div> 
+    </section> 
+    <section class="stage" id="section-links"> 
+     <div id="v284" class="stage-container"> 
+      <header id="v285" class="stage-header"> 
+       <span id="v286" class="stage-icon">🔗</span> 
+       <h2 id="v287" class="stage-title">友情链接</h2> 
+      </header> 
+      <div id="v288" class="stage-divider"></div> 
+      <p id="v289" class="stage-hint">我的喜欢的</p> 
+      <div id="v290" class="friend-wall"> 
+       <a id="v291" href="https://host.goose.cc.cd" target="_blank" class="friend-entry"><span id="v292" class="friend-idx">01</span> 
+        <div id="v293" class="friend-info"> 
+         <strong id="v294">HTML静态网页托管</strong> 
+         <p id="v295">一个优秀的托管服务</p> 
+        </div></a> 
+       <a id="v296" href="https://jsnzkpg.com" target="_blank" class="friend-entry"><span id="v297" class="friend-idx">02</span> 
+        <div id="v298" class="friend-info"> 
+         <strong id="v299">裤佬</strong> 
+         <p id="v300">一个强大的大佬</p> 
+        </div></a> 
+       <a id="v301" href="https://github.com/jia070310/lemonTV" target="_blank" class="friend-entry"><span id="v302" class="friend-idx">03</span> 
+        <div id="v303" class="friend-info"> 
+         <strong id="v304">柠檬TV</strong> 
+         <p id="v305">电视直播开源项目</p> 
+        </div></a> 
+       <a id="v306" href="https://console.cron-job.org/jobs/create" target="_blank" class="friend-entry"><span id="v307" class="friend-idx">04</span> 
+        <div id="v308" class="friend-info"> 
+         <strong id="v309">定时任务corn_job</strong> 
+         <p id="v310">用于GitHub，Codeberg代码托管平台定时任务</p> 
+        </div></a> 
+       <a id="v311" href="#" target="_blank" class="friend-entry"><span id="v312" class="friend-idx">05</span> 
+        <div id="v313" class="friend-info"> 
+         <strong id="v314">暂无</strong> 
+         <p id="v315">暂无</p> 
+        </div></a> 
+       <a id="v316" href="#" target="_blank" class="friend-entry"><span id="v317" class="friend-idx">06</span> 
+        <div id="v318" class="friend-info"> 
+         <strong id="v319">暂无</strong> 
+         <p id="v320">暂无</p> 
+        </div></a> 
+      </div> 
+     </div> 
+    </section> 
+   </main> 
+  </div> 
+  <button id="playerToggle" title="播放/暂停" aria-label="音乐播放控制"> 
+   <svg id="v321" class="play-icon" viewbox="0 0 24 24" fill="currentColor"> 
+    <path id="v322" d="M8 5v14l11-7z"></path> 
+   </svg> 
+   <svg id="v323" class="pause-icon" viewbox="0 0 24 24" fill="currentColor"> 
+    <path id="v324" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path> 
+   </svg> </button> 
+  <audio id="backgroundMusic" loop="" preload="metadata" crossorigin="anonymous"> 
+   <source id="v325" src="letting go.mp3" type="audio/mpeg"> 
+  </audio> 
+  <script src="script.js"></script>  
+  <!-- ==================== 音乐随机播放 + 点击任意位置播放 ==================== -->
+  <script>
+  (function () {
+    'use strict';
+
+    /* ============================================================
+       ①  音乐清单 —— 把 Music 文件夹里的歌名写在这里
+          只写文件名即可，脚本会自动拼上 Music/ 前缀
+          文件名区分大小写，支持中文名、空格
+       ============================================================ */
+    var FOLDER = 'Music/';
+    var MUSIC_LIST = [
+      'letting go.mp3',
+      '第二首歌.mp3',
+      '第三首歌.mp3'
+    ];
+
+    var audio  = document.getElementById('backgroundMusic');
+    var toggle = document.getElementById('playerToggle');
+    if (!audio || !MUSIC_LIST.length) return;
+
+    /* ---------- 清理 HTML 里写死的 source ---------- */
+    var oldSource = audio.querySelector('source');
+    if (oldSource) oldSource.parentNode.removeChild(oldSource);
+    audio.removeAttribute('loop');
+    audio.loop = false;
+
+    /* ---------- 生成完整播放列表 ---------- */
+    var playlist = MUSIC_LIST.map(function (name) {
+      if (/^(https?:)?\/\//i.test(name)) return name;
+      return FOLDER + encodeURI(name);
+    });
+
+    /* ============================================================
+       ②  随机播放队列（洗牌算法，一轮内不重复，且不连播同一首）
+       ============================================================ */
+    var queue = [];
+    var last = -1;
+
+    function shuffle(a) {
+      for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = a[i]; a[i] = a[j]; a[j] = t;
+      }
+      return a;
+    }
+
+    function nextIndex() {
+      if (queue.length === 0) {
+        queue = shuffle(playlist.map(function (_, i) { return i; }));
+        if (queue.length > 1 && queue[0] === last) {
+          var k = 1 + Math.floor(Math.random() * (queue.length - 1));
+          var t = queue[0]; queue[0] = queue[k]; queue[k] = t;
+        }
+      }
+      last = queue.shift();
+      return last;
+    }
+
+    var failCount = 0;
+
+    function playRandom() {
+      var i = nextIndex();
+      audio.src = playlist[i];
+      if (toggle) toggle.title = '正在播放：' + decodeURI(playlist[i]);
+      var p = audio.play();
+      if (p && typeof p.catch === 'function') p.catch(function () {});
+    }
+
+    audio.addEventListener('ended', playRandom);
+
+    // 某首歌 404 / 格式不支持 → 自动跳下一首，避免卡死
+    audio.addEventListener('error', function () {
+      if (!audio.src) return;
+      failCount++;
+      if (failCount > playlist.length * 2) return;   // 全部失败则停止
+      playRandom();
+    });
+    audio.addEventListener('playing', function () { failCount = 0; });
+
+    /* ============================================================
+       ③  右下角按钮：播放 / 暂停（同时同步图标）
+       ============================================================ */
+    if (toggle) {
+      // 克隆节点 → 清除 script.js 里可能已有的旧监听，避免点击两次
+      var fresh = toggle.cloneNode(true);
+      toggle.parentNode.replaceChild(fresh, toggle);
+      toggle = fresh;
+
+      toggle.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (!audio.src) { playRandom(); return; }
+        if (audio.paused) {
+          var p = audio.play();
+          if (p && typeof p.catch === 'function') p.catch(function () {});
+        } else {
+          audio.pause();
+        }
+      });
+    }
+
+    function syncBtn() {
+      if (toggle) toggle.classList.toggle('playing', !audio.paused);
+    }
+    audio.addEventListener('play', syncBtn);
+    audio.addEventListener('pause', syncBtn);
+
+    /* ============================================================
+       ④  点击页面任意位置 → 首次随机播放
+       ============================================================ */
+    var unlocked = false;
+
+    function detach() {
+      document.removeEventListener('click', onPageClick, true);
+      document.removeEventListener('touchstart', onPageClick, true);
+    }
+
+    function onPageClick(e) {
+      // 点播放按钮本身交给按钮自己处理
+      if (toggle && (e.target === toggle || toggle.contains(e.target))) return;
+      // 已经播过 / 正在播 → 停止监听
+      if (unlocked || !audio.paused) { detach(); return; }
+      playRandom();
+    }
+
+    document.addEventListener('click', onPageClick, true);
+    document.addEventListener('touchstart', onPageClick, true);
+
+    // 只要成功播放过一次，就撤掉页面监听（暂停后再点页面不会强行唤醒）
+    audio.addEventListener('play', function () {
+      unlocked = true;
+      detach();
+    });
+  })();
+  </script>
+  <!-- ==================== 音乐随机播放 结束 ==================== -->
+ </body>
+</html>

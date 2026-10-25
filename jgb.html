@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>价格表</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/webconnect/dist/umd/webconnect.js"></script>
+<style>
+:root{--neon-green:#00ff9d;--neon-pink:#ff00e5;--neon-blue:#00b3ff;--neon-yellow:#ffe600;--bg-deep:#0a0a0f;--bg-panel:rgba(15,15,25,0.31);--text-main:#e0ffe0;--text-dim:#6a7a7a;--font-tech:'Consolas','Courier New','Microsoft YaHei',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:var(--font-tech)}
+#stage{width:1920px;height:1080px;position:absolute;top:0;left:0;transform-origin:top left;background:var(--bg-deep);display:flex;flex-direction:column;color:var(--text-main);overflow:hidden}
+#stage::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,255,157,0.03) 3px,rgba(0,255,157,0.03) 4px)}
+.status-bar{height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 30px;background:rgba(0,0,0,0.8);border-bottom:1px solid rgba(0,255,157,0.3);position:relative;z-index:10;font-size:18px;letter-spacing:2px}
+.status-left{display:flex;align-items:center;gap:20px;color:var(--text-dim)}
+.status-left .sys-dot{width:8px;height:8px;border-radius:50%;background:var(--neon-green);box-shadow:0 0 8px var(--neon-green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.status-right{display:flex;align-items:center;gap:16px}
+#audio-error-banner{display:none;position:absolute;top:48px;left:0;right:0;z-index:9999;background:rgba(255,50,50,0.9);color:#fff;text-align:center;padding:12px;font-size:24px;font-weight:700;letter-spacing:2px;box-shadow:0 4px 15px rgba(255,0,0,0.5);}
+.voice-btn{font-size:16px;padding:8px 16px;border-radius:20px;border:1px solid rgba(0,255,157,0.4);background:rgba(0,255,157,0.08);color:var(--neon-green);cursor:pointer;transition:.2s;white-space:nowrap;outline:none;letter-spacing:1px;user-select:none}
+.voice-btn:focus,.voice-btn:hover{box-shadow:0 0 15px var(--neon-green);transform:scale(1.05);}
+.voice-btn.off{border-color:rgba(255,80,80,0.6);background:rgba(255,80,80,0.08);color:#ff7070}
+.voice-btn.off:focus,.voice-btn.off:hover{box-shadow:0 0 15px #ff7070;}
+.voice-btn.qr{border-color:rgba(0,179,255,.55);background:rgba(0,179,255,.08);color:#00b3ff;}
+.voice-btn.qr:focus,.voice-btn.qr:hover{box-shadow:0 0 15px #00b3ff;}
+.voice-btn.audio{border-color:rgba(255,0,229,.55);background:rgba(255,0,229,.08);color:var(--neon-pink);}
+.voice-btn.audio:focus,.voice-btn.audio:hover{box-shadow:0 0 15px var(--neon-pink);}
+.voice-btn.audio.playing{animation:musicPulse 1.5s infinite;background:rgba(255,0,229,.28);}
+@keyframes musicPulse{0%,100%{box-shadow:0 0 10px var(--neon-pink)}50%{box-shadow:0 0 24px var(--neon-pink),0 0 36px var(--neon-pink)}}
+#clientStatus{pointer-events:none;border-color:#6a7a7a;color:#8a9a9a;margin-right:10px;transition:.3s;}
+#clientStatus.active{border-color:#00ff9d;color:#00ff9d;box-shadow:0 0 15px rgba(0,255,157,0.3);}
+.main-body{flex:1;display:flex;min-height:0;position:relative;z-index:1}
+.left-panel{width:380px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid rgba(0,255,157,0.2);padding:16px 16px;gap:12px;background:rgba(0,0,0,0.5)}
+.brand-vertical{text-align:center;flex-shrink:0}
+.brand-logo{width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 0 15px rgba(0,255,157,0.4));margin-bottom:4px}
+.brand-name{font-size:42px;font-weight:900;letter-spacing:6px;background:linear-gradient(90deg,var(--neon-green),var(--neon-blue));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 20px rgba(0,255,157,0.3))}
+.brand-sub{font-size:14px;color:var(--text-dim);letter-spacing:3px;margin-top:4px}
+.info-carousel{flex-shrink:0;height:118px;position:relative;border-top:1px solid rgba(0,255,157,0.15);border-bottom:1px solid rgba(0,255,157,0.15);overflow:hidden}
+.info-panel{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s,visibility .6s;opacity:0;visibility:hidden}
+.info-panel.active{opacity:1;visibility:visible}
+.time-block{text-align:center}
+.clock{font-size:42px;font-weight:700;color:var(--neon-green);text-shadow:0 0 15px rgba(0,255,157,0.6);font-variant-numeric:tabular-nums;letter-spacing:2px}
+.date{font-size:16px;color:var(--text-dim);letter-spacing:2px;margin-top:2px}
+.weather-block{text-align:center;width:100%;cursor:pointer;}
+.weather-icon-big{font-size:44px;line-height:1;filter:drop-shadow(0 0 12px rgba(0,255,157,0.3))}
+.weather-info{display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:4px;flex-wrap:wrap}
+.weather-city{font-size:22px;font-weight:700;color:var(--neon-green);letter-spacing:2px;text-shadow:0 0 8px rgba(0,255,157,0.4)}
+.weather-desc{font-size:22px;color:var(--text-main);letter-spacing:1px}
+.weather-temp{font-size:22px;font-weight:700;color:var(--neon-yellow);letter-spacing:1px;text-shadow:0 0 8px rgba(255,230,0,0.4)}
+.weather-refresh-hint{font-size:12px;color:var(--text-dim);margin-top:4px;}
+.service-grid{flex-shrink:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.service-cell{background:rgba(0,255,157,0.04);border:1px solid rgba(0,255,157,0.22);border-radius:6px;padding:8px 10px;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:2px;transition:.25s}
+.service-cell::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--sv-accent,var(--neon-green));box-shadow:0 0 8px var(--sv-accent,var(--neon-green))}
+.service-cell .k{font-size:14px;color:var(--text-dim);letter-spacing:1px;white-space:nowrap}
+.service-cell .v{font-size:17px;font-weight:700;color:var(--sv-accent,var(--neon-green));letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 10px currentColor}
+.vip-box{flex:1;min-height:250px;display:flex;flex-direction:column;border:1px solid rgba(255,230,0,0.28);border-radius:8px;background:rgba(255,230,0,0.04);overflow:hidden}
+.vip-head{flex-shrink:0;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:rgba(255,230,0,0.08);border-bottom:1px solid rgba(255,230,0,0.2);font-size:19px;letter-spacing:2px;color:var(--neon-yellow);font-weight:700}
+.vip-head .diamond{animation:pulse 2s infinite;display:inline-block;margin-right:5px}
+.vip-tag{font-size:14px;color:#00ff9d;letter-spacing:1px;opacity:.85}
+.vip-list{flex:1;min-height:0;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.vip-row{flex:1;min-height:0;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-radius:6px;background:rgba(255,230,0,0.05);border-left:3px solid var(--neon-yellow);transition:.25s}
+.vip-row:nth-child(1){border-left-color:#00ff9d;background:rgba(0,255,157,0.06)}
+.vip-row:nth-child(2){border-left-color:#00b3ff;background:rgba(0,179,255,0.06)}
+.vip-row:nth-child(3){border-left-color:#ff6d00;background:rgba(255,109,0,0.06)}
+.vip-pay{font-size:21px;color:var(--text-main);letter-spacing:.5px;white-space:nowrap}
+.vip-pay b{font-size:28px;font-weight:900;color:var(--neon-yellow);text-shadow:0 0 12px rgba(255,230,0,.6);margin:0 3px}
+.vip-bonus{font-size:21px;font-weight:900;letter-spacing:.5px;white-space:nowrap;color:#00ff9d;text-shadow:0 0 10px rgba(0,255,157,.5)}
+.vip-row:nth-child(2) .vip-bonus{color:#00b3ff;text-shadow:0 0 10px rgba(0,179,255,.5)}
+.vip-row:nth-child(3) .vip-bonus{color:#ff6d00;text-shadow:0 0 10px rgba(255,109,0,.5)}
+.vip-row:nth-child(4) .vip-bonus{color:#ffe600;text-shadow:0 0 10px rgba(255,230,0,.5)}
+.announcement-box{flex:0 0 215px;min-height:0;border:1px solid rgba(0,255,157,0.25);border-radius:6px;background:#000;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.announce-header{flex-shrink:0;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:rgba(0,255,157,0.06);border-bottom:1px solid rgba(0,255,157,0.25);z-index:3}
+.announce-title{font-size:19px;font-weight:700;color:var(--neon-green);letter-spacing:3px;text-shadow:0 0 10px rgba(0,255,157,0.5);display:flex;align-items:center;gap:8px}
+.announce-title .bell{animation:bellShake 2s infinite}
+@keyframes bellShake{0%,90%,100%{transform:rotate(0)}92%,96%{transform:rotate(15deg)}94%,98%{transform:rotate(-15deg)}}
+.announce-count{font-size:13px;color:var(--text-dim);letter-spacing:1px}
+.announce-body{position:relative;flex:1;min-height:0;overflow:hidden}
+.announce-list{position:absolute;left:0;right:0;top:0;padding:8px 14px;animation:scrollUp linear infinite}
+@keyframes scrollUp{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+.announce-item{display:flex;gap:10px;padding:11px 4px;border-bottom:1px dashed rgba(0,255,157,0.12);align-items:flex-start}
+.announce-item:last-child{border-bottom:none}
+.announce-dot{flex-shrink:0;width:9px;height:9px;border-radius:50%;margin-top:8px;background:var(--neon-green);box-shadow:0 0 8px var(--neon-green)}
+.announce-item.pink .announce-dot{background:var(--neon-pink);box-shadow:0 0 8px var(--neon-pink)}
+.announce-item.yellow .announce-dot{background:var(--neon-yellow);box-shadow:0 0 8px var(--neon-yellow)}
+.announce-item.blue .announce-dot{background:var(--neon-blue);box-shadow:0 0 8px var(--neon-blue)}
+.announce-item.orange .announce-dot{background:#ff6d00;box-shadow:0 0 8px #ff6d00}
+.announce-text{flex:1;font-size:19px;line-height:1.5;color:var(--text-main);letter-spacing:1px;word-break:break-word}
+.announce-text .hl{color:var(--neon-green);font-weight:700;text-shadow:0 0 8px rgba(0,255,157,0.5)}
+.announce-text .hl-pink{color:var(--neon-pink);font-weight:700;text-shadow:0 0 8px rgba(255,0,229,0.5)}
+.announce-text .hl-yellow{color:var(--neon-yellow);font-weight:700;text-shadow:0 0 8px rgba(255,230,0,0.5)}
+.announce-text b{color:#fff;text-shadow:0 0 8px rgba(255,255,255,0.4)}
+.announce-body::before,.announce-body::after{content:'';position:absolute;left:0;right:0;height:20px;z-index:2;pointer-events:none}
+.announce-body::before{top:0;background:linear-gradient(180deg,#000 0%,rgba(0,0,0,0) 100%)}
+.announce-body::after{bottom:0;background:linear-gradient(0deg,#000 0%,rgba(0,0,0,0) 100%)}
+
+.center-panel{flex:1;display:flex;flex-direction:column;padding:20px 24px;gap:14px;min-width:0;overflow-y:auto;justify-content:flex-start;position:relative;z-index:1}
+.center-panel::-webkit-scrollbar{display:none}
+.bg-image{position:absolute;top:0;left:0;width:100%;height:100%;background-size:cover;background-position:center;z-index:0;opacity:0.6;pointer-events:none;transition:background-image 0.5s ease, opacity 0.4s ease;}
+.period-banner,.price-section,.tech-divider{position:relative;z-index:1}
+.period-banner{height:52px;flex-shrink:0;text-align:center;font-size:28px;font-weight:700;letter-spacing:5px;padding:10px 0;border:1px solid transparent;border-radius:4px;background:transparent;color:var(--neon-green);text-shadow:0 0 20px rgba(0,255,157,.5);visibility:hidden;transition:all .3s}
+.period-banner.show{visibility:visible;border-color:rgba(0,255,157,.3);background:rgba(0,255,157,.05)}
+.period-banner.morning{border-color:rgba(255,230,0,.4);background:rgba(255,230,0,.05);color:var(--neon-yellow);text-shadow:0 0 20px rgba(255,230,0,.5)}
+.price-section{flex-shrink:0}
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.indicator{width:5px;height:24px;background:var(--neon-green);box-shadow:0 0 10px var(--neon-green);border-radius:2px}
+.title{font-size:24px;font-weight:700;letter-spacing:3px;color:var(--neon-green);text-shadow:0 0 12px rgba(0,255,157,.4)}
+.title.purple{color:var(--neon-pink);text-shadow:0 0 12px rgba(255,0,229,.4)}
+.title.yellow{color:var(--neon-yellow);text-shadow:0 0 12px rgba(255,230,0,.4)}
+.tag{font-size:16px;color:var(--text-dim);letter-spacing:1px}
+#timerSection .cards-row,#nightSection .cards-row{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+#morningSection .cards-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.card-item{--card-accent:var(--neon-green);background:var(--bg-panel);border:1px solid var(--card-accent);border-radius:6px;padding:18px 12px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;position:relative;overflow:hidden;transition:all .25s;box-shadow:0 0 15px rgba(0,0,0,.5),inset 0 0 20px rgba(0,0,0,.3)}
+.card-item::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-accent);box-shadow:0 0 8px var(--card-accent)}
+.card-name{font-size:24px;font-weight:700;color:var(--card-accent);letter-spacing:1px;text-shadow:0 0 10px var(--card-accent)}
+.card-price{font-size:62px;font-weight:900;color:#fff;line-height:1;text-shadow:0 0 15px var(--card-accent),0 0 30px var(--card-accent)}
+.card-price small{font-size:26px;font-weight:400;vertical-align:top}
+.card-unit{font-size:16px;color:var(--text-dim)}
+.card-config{font-size:16px;color:var(--text-dim);line-height:1.4;border-top:1px solid rgba(255,255,255,.08);padding-top:8px;margin-top:2px}
+.accent-cyan{--card-accent:#00b3ff}
+.accent-pink{--card-accent:#ff00e5}
+.accent-orange{--card-accent:#ff6d00}
+.accent-yellow{--card-accent:#ffe600}
+.accent-purple{--card-accent:#aa66ff}
+.price-section.promoted .card-item{padding:22px 14px}
+.price-section.promoted .card-name{font-size:26px}
+.price-section.promoted .card-price{font-size:78px}
+.price-section.promoted .card-price small{font-size:30px}
+.price-section.promoted .card-config{font-size:20px}
+.tech-divider{height:1px;flex-shrink:0;background:linear-gradient(90deg,transparent,rgba(0,255,157,.4),rgba(0,179,255,.4),transparent);position:relative}
+.tech-divider::after{content:'◆';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:10px;color:var(--neon-green);background:var(--bg-deep);padding:0 8px}
+.footer-bar{height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 30px;background:rgba(0,0,0,.8);border-top:1px solid rgba(0,255,157,.3);font-size:22px;letter-spacing:1px;color:var(--text-dim);position:relative;z-index:3}
+.footer-left{display:flex;align-items:center;gap:24px}
+.footer-item{display:flex;align-items:center;gap:10px;font-size:22px}
+.footer-item .dot{width:8px;height:8px;border-radius:50%;background:var(--neon-green);box-shadow:0 0 6px var(--neon-green)}
+.footer-item:nth-child(2) .dot{background:var(--neon-pink);box-shadow:0 0 6px var(--neon-pink)}
+.footer-item:nth-child(3) .dot{background:var(--neon-yellow);box-shadow:0 0 6px var(--neon-yellow)}
+.footer-item:nth-child(4) .dot{background:#4caf50;box-shadow:0 0 6px #4caf50}
+.footer-right{display:flex;align-items:center;gap:20px;font-size:22px}
+.footer-phone{color:var(--neon-green);text-shadow:0 0 8px rgba(0,255,157,.4);font-size:26px}
+.footer-slogan{color:var(--text-dim);letter-spacing:2px;font-size:22px}
+
+/* 🎯 视频全屏居中 */
+#p2pRemoteVideo {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 99999;
+  background: #000;
+  object-fit: contain;
+  display: none;
+  pointer-events: none;
+}
+#p2pRemoteVideo.show { display: block; }
+
+.qr-modal{position:absolute;inset:0;z-index:99998;background:rgba(0,0,0,.86);display:none;align-items:center;justify-content:center;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.qr-modal.show{display:flex}
+.qr-content{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;padding:56px 96px;border-radius:36px;border:3px solid rgba(0,255,157,.42);background:linear-gradient(180deg,rgba(0,255,157,.09),rgba(0,0,0,.95));box-shadow:0 0 110px rgba(0,255,157,.32),inset 0 0 70px rgba(0,255,157,.06);font-family:var(--font-tech)}
+.qr-title{font-size:58px;letter-spacing:16px;font-weight:700;white-space:nowrap;color:var(--neon-green);text-shadow:0 0 30px rgba(0,255,157,.65)}
+.qr-body{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:86px}
+.qr-details{display:flex;flex-direction:column;align-items:flex-start;gap:28px;width:720px;text-align:left}
+.qr-hint{font-size:28px;letter-spacing:4px;line-height:1.6;color:#c9f7dc;opacity:.9;text-align:center;width:100%;}
+.qr-close{padding:18px 86px;font-family:inherit;font-weight:700;font-size:32px;letter-spacing:12px;color:#00ff9d;background:rgba(0,255,157,.1);border:3px solid rgba(0,255,157,.45);border-radius:18px;cursor:pointer;transition:.2s;outline:none;}
+.qr-close:hover,.qr-close:focus{background:rgba(0,255,157,.22);box-shadow:0 0 40px rgba(0,255,157,.65);}
+#qrcode,#adminQrcode{display:flex;align-items:center;justify-content:center;padding:24px;background:#fff;border-radius:22px;box-shadow:0 0 70px rgba(0,255,157,.5);flex-shrink:0;line-height:0}
+#qrcode img,#qrcode canvas,#adminQrcode img,#adminQrcode canvas{display:block !important}
+
+/* 音乐播放器 */
+.music-modal { position: absolute; inset: 0; z-index: 99999; background: rgba(5,5,10,0.95); display: none; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); align-items: center; justify-content: center; font-family: var(--font-tech); }
+.music-modal.show { display: flex; }
+.music-layout { width: 1600px; height: 860px; display: flex; gap: 40px; }
+.music-left { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(180deg, rgba(255,0,229,0.05), transparent); border-radius: 30px; border: 1px solid rgba(255,0,229,0.2); padding: 50px; position: relative; }
+.music-right { width: 700px; display: flex; flex-direction: column; background: rgba(255,255,255,0.02); border-radius: 30px; border: 1px solid rgba(255,0,229,0.2); padding: 30px; position: relative; overflow: hidden; }
+.music-disc { width: 280px; height: 280px; border-radius: 50%; background: #111; border: 8px solid #222; box-shadow: 0 0 60px rgba(255,0,229,0.3), inset 0 0 30px #000; display: flex; align-items: center; justify-content: center; position: relative; animation: spin 12s linear infinite; animation-play-state: paused; margin-bottom: 40px; }
+.music-disc::after { content: ''; width: 80px; height: 80px; background: linear-gradient(135deg, #222, #000); border-radius: 50%; border: 3px solid #ff00e5; box-shadow: 0 0 20px rgba(255,0,229,0.5); }
+.music-disc.playing { animation-play-state: running; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+.music-now-title { font-size: 36px; color: #fff; font-weight: 900; text-align: center; text-shadow: 0 0 20px rgba(255,0,229,0.6); margin-bottom: 30px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+.music-controls { display: flex; align-items: center; justify-content: center; gap: 40px; }
+.music-btn { background: none; border: none; color: #fff; font-size: 40px; cursor: pointer; transition: 0.2s; outline: none; }
+.music-btn:hover, .music-btn:focus { color: var(--neon-pink); text-shadow: 0 0 20px var(--neon-pink); transform: scale(1.1); }
+.music-btn.play-btn { width: 90px; height: 90px; border-radius: 50%; background: rgba(255,0,229,0.15); border: 2px solid var(--neon-pink); display: flex; align-items: center; justify-content: center; font-size: 46px; }
+.music-btn.play-btn:hover, .music-btn.play-btn:focus { background: var(--neon-pink); color: #000; box-shadow: 0 0 40px var(--neon-pink); }
+.music-mode-badge { margin-top: 28px; padding: 12px 36px; font-size: 20px; letter-spacing: 4px; font-weight: 700; color: var(--neon-pink); border: 2px solid rgba(255,0,229,.45); border-radius: 999px; background: rgba(255,0,229,.08); box-shadow: 0 0 24px rgba(255,0,229,.25), inset 0 0 16px rgba(255,0,229,.08); transition: all .3s; white-space: nowrap; user-select: none; }
+.music-mode-badge.single { color: var(--neon-yellow); border-color: rgba(255,230,0,.55); background: rgba(255,230,0,.08); box-shadow: 0 0 24px rgba(255,230,0,.3), inset 0 0 16px rgba(255,230,0,.08); }
+.music-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.music-header h3 { font-size: 24px; color: var(--neon-pink); letter-spacing: 4px; }
+.music-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 10px; }
+.music-list::-webkit-scrollbar { width: 6px; }
+.music-list::-webkit-scrollbar-thumb { background: rgba(255,0,229,0.5); border-radius: 3px; }
+.music-item { padding: 18px 24px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); font-size: 22px; color: #ccc; cursor: pointer; display: flex; align-items: center; gap: 15px; transition: 0.2s; outline: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.music-item:hover, .music-item:focus { background: rgba(255,0,229,0.1); border-color: rgba(255,0,229,0.4); color: #fff; }
+.music-item.active { background: rgba(255,0,229,0.2); border-color: var(--neon-pink); color: var(--neon-pink); font-weight: bold; box-shadow: 0 0 20px rgba(255,0,229,0.3); }
+.music-footer { margin-top: 20px; display: flex; gap: 20px; }
+.music-footer .qr-close { flex: 1; padding: 16px 0; font-size: 24px; border-color: var(--neon-pink); color: var(--neon-pink); background: rgba(255,0,229,0.1); }
+.music-footer .qr-close:hover, .music-footer .qr-close:focus { background: rgba(255,0,229,0.25); box-shadow: 0 0 30px rgba(255,0,229,0.5); }
+.music-admin-panel { position: absolute; inset: 0; background: rgba(10,10,15,0.98); z-index: 10; display: none; flex-direction: column; align-items: center; justify-content: center; border-radius: 30px; padding: 30px; }
+.music-admin-panel.show { display: flex; }
+.music-admin-panel .qr-title { font-size: 32px; color: var(--neon-pink); text-shadow: 0 0 20px rgba(255,0,229,0.5); margin-bottom: 30px; letter-spacing: 2px; }
+.music-admin-panel .qr-box { padding: 20px; background: #fff; border-radius: 20px; margin-bottom: 20px; line-height: 0; box-shadow: 0 0 40px rgba(255,0,229,0.3); }
+.music-admin-panel .code-text { font-size: 24px; color: #fff; text-align: center; line-height: 1.8; }
+.music-admin-panel .code-text span { font-size: 42px; color: var(--neon-pink); font-weight: 900; letter-spacing: 8px; }
+.music-admin-panel .back-btn { margin-top: 30px; width: 240px; }
+
+/* P2P 呼叫端样式 */
+#p2pCallerRoot{--bg:#0a0c11;--panel:rgba(255,255,255,.045);--stroke:rgba(255,255,255,.09);--text:#e9ecf5;--muted:#8a92a6;--accent:#6b7cff;--accent-2:#9b6bff;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--radius:16px;position:fixed;inset:0;z-index:100;display:none;overflow-y:auto;color:var(--text);background:var(--bg);font:16px/1.6 -apple-system,BlinkMacSystemFont,"SF Pro SC","PingFang SC",sans-serif}
+#p2pCallerRoot.show{display:block}
+#p2pCallerRoot .p2p-inner{max-width:620px;margin:0 auto;padding:22px 16px}
+#p2pCallerRoot h1{font-size:21px;font-weight:700;margin:0 0 12px;color:var(--text)}
+#p2pCallerRoot #status{display:flex;align-items:center;gap:9px;margin:0 0 16px;padding:11px 15px;font-size:13.5px;color:var(--muted);background:var(--panel);border:1px solid var(--stroke);border-radius:14px}
+#p2pCallerRoot button{font:inherit;font-weight:600;font-size:16px;width:100%;margin:0 0 10px;padding:14px 18px;border:none;border-radius:15px;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-2));cursor:pointer}
+#p2pCallerRoot button.danger{background:linear-gradient(135deg,#ff5d5d,#c01717)}
+#p2pCallerRoot button.success{background:linear-gradient(135deg,#25d366,#12a04f)}
+#p2pCallerRoot #btnVideo{background:linear-gradient(135deg,#4b93ff,#2358d8)}
+#p2pCallerRoot .hide{display:none !important}
+#p2pCallerRoot #chat{margin-bottom:15px}
+#p2pCallerRoot #msgs{display:flex;flex-direction:column;gap:9px;height:260px;padding:14px;overflow-y:auto;background:rgba(255,255,255,.028);border:1px solid var(--stroke);border-radius:var(--radius)}
+#p2pCallerRoot .msg{max-width:78%;padding:10px 14px;font-size:15px;line-height:1.48;background:rgba(255,255,255,.075);border-radius:16px 16px 16px 5px}
+#p2pCallerRoot .msg.me{margin-left:auto;background:linear-gradient(135deg,var(--accent),var(--accent-2));border-radius:16px 16px 5px 16px}
+#p2pCallerRoot .row{display:flex;gap:10px}
+#p2pCallerRoot input{flex:1;padding:13px 16px;color:#fff;background:rgba(255,255,255,.05);border:1px solid var(--stroke);border-radius:15px;outline:none}
+#p2pCallerRoot #btnPTT{width:100%;height:168px;margin:14px 0 10px;font-size:22px;border-radius:26px;background:linear-gradient(160deg,#2ee07a,#0f9d4e);user-select:none;touch-action:none}
+#p2pCallerRoot #btnPTT.talking{background:linear-gradient(160deg,#ff5f6d,#d8182e)}
+#p2pCallerRoot #callStage{position:fixed;inset:0;z-index:9000;display:none;background:#05070a}
+#p2pCallerRoot #callStage.show{display:block}
+#p2pCallerRoot #remoteVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+#p2pCallerRoot #localVideo{position:absolute;top:16px;right:16px;width:108px;height:148px;object-fit:cover;border-radius:16px;border:1px solid #fff}
+#p2pCallerRoot .call-controls{position:absolute;bottom:38px;left:50%;transform:translateX(-50%);display:flex;gap:18px;padding:11px 16px;background:rgba(16,18,26,.55);border-radius:999px}
+#p2pCallerRoot .ctl{width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.14);font-size:23px}
+#p2pCallerRoot #incomingCall{position:fixed;inset:0;z-index:9500;display:none;align-items:center;justify-content:center;background:rgba(5,7,11,.82)}
+#p2pCallerRoot #incomingCall.show{display:flex}
+#p2pCallerRoot .incoming-inner{padding:40px 26px;text-align:center;background:#1a1c26;border-radius:28px}
+#p2pCallerRoot .incoming-icon{font-size:76px;margin-bottom:22px}
+#p2pCallerRoot .incoming-btns{display:flex;gap:46px;justify-content:center;margin-top:20px}
+#p2pCallerRoot .incoming-btns button{width:82px;height:82px;border-radius:50%;font-size:30px}
+</style>
+</head>
+<body id="v1">
+
+<div id="audio-error-banner">⚠️ 音频文件加载失败，正在重试中...</div>
+
+<div id="stage">
+  <div class="status-bar">
+    <div class="status-left">
+      <span class="sys-dot"></span>
+      <span>LUFEI E-SPORTS TERMINAL</span>
+      <span style="opacity:.4">v5.4</span>
+    </div>
+    <div class="status-right">
+      <div class="voice-btn" id="clientStatus">📱 未连接</div>
+      <div class="voice-btn audio" id="musicBtn" tabindex="0">🎵 音乐台</div>
+      <div class="voice-btn qr" id="adminIdBtn" tabindex="0">⚙️ 扫码管理</div>
+      <div class="voice-btn qr" id="qrBtn" tabindex="0">📱 扫码呼叫</div>
+      <div class="voice-btn" id="bgVideoBtn" tabindex="0">🖼️ 背景开启</div>
+      <div class="voice-btn" id="voiceBtn" tabindex="0">🔊 语音开启</div>
+    </div>
+  </div>
+
+  <div class="main-body">
+    <div class="left-panel">
+      <div class="brand-vertical">
+        <img class="brand-logo" src="https://diskmirror.lingyuzhao.top/1193/Binary/logo.png" alt="logo" onerror="this.style.display='none'">
+        <div class="brand-name" id="v14">路飞电竞</div>
+        <div class="brand-sub" id="v15">LUFEI E-SPORTS</div>
+      </div>
+      <div class="info-carousel" id="infoCarousel">
+        <div class="info-panel active" id="timePanel">
+          <div class="time-block">
+            <div class="clock" id="clock">15:16:01</div>
+            <div class="date" id="dateLine">2026/8/23 日</div>
+          </div>
+        </div>
+        <div class="info-panel" id="weatherPanel">
+          <div class="weather-block" id="weatherBlock" onclick="fetchWeather()">
+            <div class="weather-icon-big" id="weatherIconBig">🌦️</div>
+            <div class="weather-info">
+              <span class="weather-city" id="weatherCityBig">阜新</span>
+              <span class="weather-desc" id="weatherDescBig">加载中</span>
+              <span class="weather-temp" id="weatherTempBig">--°</span>
+            </div>
+            <div class="weather-refresh-hint">点击刷新</div>
+          </div>
+        </div>
+      </div>
+      <div class="service-grid">
+        <div class="service-cell" style="--sv-accent:#00ff9d"><div class="k">营业时间</div><div class="v" data-sv="hours">24H 全天候</div></div>
+        <div class="service-cell" style="--sv-accent:#00b3ff"><div class="k">WiFi 名称</div><div class="v" data-sv="wifiName">路飞电竞</div></div>
+        <div class="service-cell" style="--sv-accent:#ffe600"><div class="k">WiFi 密码</div><div class="v" data-sv="wifiPwd">lufeidianjing</div></div>
+        <div class="service-cell" style="--sv-accent:#ff00e5"><div class="k">服务热线</div><div class="v" data-sv="hotline">166 0418 6135</div></div>
+      </div>
+      <div class="vip-box">
+        <div class="vip-head">
+          <span><span class="diamond">💎</span>会员充值优惠</span>
+          <span class="vip-tag">新会员有效</span>
+        </div>
+        <div class="vip-list">
+          <div class="vip-row"><span class="vip-pay">充 <b>39.9</b> 元</span><span class="vip-bonus">到手100元</span></div>
+          <div class="vip-row"><span class="vip-pay">充 <b>100</b> 元</span><span class="vip-bonus">到手300元</span></div>
+          <div class="vip-row"><span class="vip-pay">充 <b>200</b> 元</span><span class="vip-bonus">到手600元</span></div>
+          <div class="vip-row"><span class="vip-pay">充 <b>500</b> 元</span><span class="vip-bonus">到手1600元</span></div>
+        </div>
+      </div>
+      <div class="announcement-box">
+        <div class="announce-header">
+          <div class="announce-title"><span class="bell">🔔</span>公 告 栏</div>
+          <div class="announce-count" id="announceCount">共 15 条</div>
+        </div>
+        <div class="announce-body">
+          <div class="announce-list" id="announceList">
+            <div class="announce-item pink"><span class="announce-dot"></span><div class="announce-text"><span class="hl-pink">【消防公告】</span>公共场所（网吧）服务人员火灾处置流程</div></div>
+            <div class="announce-item yellow"><span class="announce-dot"></span><div class="announce-text"><span class="hl-yellow">【一、第一时间发现火情】</span>立刻呼喊："着火了！请大家有序疏散！"，提醒在场顾客。</div></div>
+            <div class="announce-item yellow"><span class="announce-dot"></span><div class="announce-text"><span class="hl-yellow">【判断火势】</span>小火可使用就近灭火器扑救；火势扩大、出现浓烟，不冒险救火，优先疏散客人。</div></div>
+            <div class="announce-item blue"><span class="announce-dot"></span><div class="announce-text"><span class="hl">【二、报警】</span>安排一人拨打 <b>119</b>，讲清详细地址、场所名称、起火位置、燃烧物、现场大概人数、联系电话。</div></div>
+            <div class="announce-item blue"><span class="announce-dot"></span><div class="announce-text"><span class="hl">【接应消防】</span>有条件安排人到路口接应消防车。</div></div>
+            <div class="announce-item pink"><span class="announce-dot"></span><div class="announce-text"><span class="hl-pink">【三、组织顾客疏散 · 最重要】</span>引导大家走安全出口，<b>严禁使用电梯</b>。</div></div>
+            <div class="announce-item pink"><span class="announce-dot"></span><div class="announce-text"><span class="hl-pink">【疏散要点】</span>提醒人员弯腰捂口鼻，远离浓烟区域。</div></div>
+            <div class="announce-item pink"><span class="announce-dot"></span><div class="announce-text"><span class="hl-pink">【疏散要点】</span>劝阻顾客不要回去拿手机、钱包等财物。</div></div>
+            <div class="announce-item pink"><span class="announce-dot"></span><div class="announce-text"><span class="hl-pink">【疏散要点】</span>检查包间、卫生间，防止有人躲在里面。</div></div>
+            <div class="announce-item pink"><span class="announce-dot"></span><div class="announce-text"><span class="hl-pink">【被困处理】</span>如果房门发烫，禁止开门，封堵门缝，引导到窗口等待救援。</div></div>
+            <div class="announce-item orange"><span class="announce-dot"></span><div class="announce-text"><span class="hl-pink">【四、力所能及处置】</span>保证自身安全前提下，切断场所总电源、关闭燃气。</div></div>
+            <div class="announce-item orange"><span class="announce-dot"></span><div class="announce-text"><span class="hl-pink">【应急处置】</span>开启应急照明，打开安全出口门，不要堵塞通道。</div></div>
+            <div class="announce-item orange"><span class="announce-dot"></span><div class="announce-text"><span class="hl-pink">【灭火禁忌】</span>油锅、电器起火禁止泼水，使用灭火器灭火。</div></div>
+            <div class="announce-item"><span class="announce-dot"></span><div class="announce-text"><span class="hl">【五、撤离到安全区域后】</span>清点人数，确认是否有人被困，告知消防员现场人员情况。</div></div>
+            <div class="announce-item pink"><span class="announce-dot"></span><div class="announce-text"><span class="hl-pink">【重要提醒】</span>火灾没结束，工作人员<b>不得擅自重返室内</b>！</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="center-panel" id="centerPanel">
+      <div id="bgImage" class="bg-image"></div>
+      <div class="period-banner show" id="periodBanner">电竞价目表</div>
+      
+      <div class="price-section" id="timerSection">
+        <div class="section-header"><span class="indicator"></span><span class="title">计时价格</span><span class="tag">元 / 小时</span></div>
+        <div class="cards-row">
+          <div class="card-item"><div class="card-name">大厅</div><div class="card-price"><small>￥</small>11</div><div class="card-unit"> /小时</div><div class="card-config">9700X + RTX 5070</div></div>
+          <div class="card-item accent-cyan"><div class="card-name">包间</div><div class="card-price"><small>￥</small>16.8</div><div class="card-unit"> /小时</div><div class="card-config">7800X3D + RTX 5070</div></div>
+          <div class="card-item accent-pink"><div class="card-name">精品包</div><div class="card-price"><small>￥</small>17.8</div><div class="card-unit"> /小时</div><div class="card-config">9800X3D + RTX 5070 <br>外设自选</div></div>
+          <div class="card-item accent-orange"><div class="card-name">豪华包</div><div class="card-price"><small>￥</small>21.8</div><div class="card-unit"> /小时</div><div class="card-config">9800X3D + RTX 5080 <br>外设自选</div></div>
+          <div class="card-item accent-yellow"><div class="card-name">至尊包</div><div class="card-price"><small>￥</small>26.8</div><div class="card-unit"> /小时</div><div class="card-config">9800X3D + RTX 5080 <br>旗舰外设</div></div>
+          <div class="card-item accent-purple"><div class="card-name">超豪华包</div><div class="card-price"><small>￥</small>32.8</div><div class="card-unit"> /小时</div><div class="card-config">9800X3D + RTX 5080 <br>旗舰外设</div></div>
+        </div>
+      </div>
+      <div class="tech-divider" id="div1"></div>
+      
+      <div class="price-section" id="nightSection">
+        <div class="section-header"><span class="indicator" style="background:var(--neon-pink);box-shadow:0 0 10px var(--neon-pink);"></span><span class="title purple">包宿</span><span class="tag">21:55 — 07:00</span></div>
+        <div class="cards-row">
+          <div class="card-item" style="--card-accent:#ff00e5;"><div class="card-name">大厅</div><div class="card-price">30</div><div class="card-config">9700X + 5070</div></div>
+          <div class="card-item" style="--card-accent:#00b3ff;"><div class="card-name">包间</div><div class="card-price">40</div><div class="card-config">7800X3D + 5070</div></div>
+          <div class="card-item" style="--card-accent:#ff00e5;"><div class="card-name">精品包</div><div class="card-price">50</div><div class="card-config">9800X3D + 5070</div></div>
+          <div class="card-item" style="--card-accent:#ff6d00;"><div class="card-name">豪华包</div><div class="card-price">60</div><div class="card-config">9800X3D + 5080</div></div>
+          <div class="card-item" style="--card-accent:#ffe600;"><div class="card-name">至尊包</div><div class="card-price">70</div><div class="card-config">9800X3D + 5080</div></div>
+          <div class="card-item" style="--card-accent:#aa66ff;"><div class="card-name">超豪华包</div><div class="card-price">80</div><div class="card-config">9800X3D + RTX 5080</div></div>
+        </div>
+      </div>
+      <div class="tech-divider" id="div2"></div>
+      
+      <div class="price-section" id="morningSection">
+        <div class="section-header"><span class="indicator" style="background:var(--neon-yellow);box-shadow:0 0 10px var(--neon-yellow);"></span><span class="title yellow">包早</span><span class="tag">07:00 — 13:00</span></div>
+        <div class="cards-row">
+          <div class="card-item" style="--card-accent:#00ff9d;"><div class="card-name">大厅</div><div class="card-price">12.9</div><div class="card-config">9700X + 5070</div></div>
+          <div class="card-item" style="--card-accent:#00b3ff;"><div class="card-name">包间</div><div class="card-price">17.8</div><div class="card-config">7800X3D + 5070</div></div>
+          <div class="card-item" style="--card-accent:#ff00e5;"><div class="card-name">精品双人包</div><div class="card-price">29.9</div><div class="card-config">9800X3D + 5070</div></div>
+          <div class="card-item" style="--card-accent:#ff00e5;"><div class="card-name">精品单人包</div><div class="card-price">39.9</div><div class="card-config">9800X3D + 5080</div></div>
+          <div class="card-item" style="--card-accent:#ff6d00;"><div class="card-name">豪华包</div><div class="card-price">49.9</div><div class="card-config">9800X3D + 5080</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bar">
+    <div class="footer-left">
+      <div class="footer-item"><span class="dot"></span>未成年人禁止入内</div>
+      <div class="footer-item"><span class="dot"></span>请携带有效身份证件登记</div>
+      <div class="footer-item"><span class="dot"></span>大厅禁止吸烟</div>
+      <div class="footer-item"><span class="dot"></span>妥善保管个人物品</div>
+    </div>
+    <div class="footer-right">
+      <span class="footer-slogan">路飞电竞 · 畅享游戏世界</span>
+      <span class="footer-phone">📞 166 0418 6135</span>
+    </div>
+  </div>
+
+  <div class="music-modal" id="musicModal">
+    <div class="music-layout">
+      <div class="music-left">
+        <div class="music-disc" id="musicDisc"></div>
+        <div class="music-now-title" id="musicNowTitle">暂无播放</div>
+        <div class="music-controls">
+          <button class="music-btn" id="musicPrevBtn">⏮</button>
+          <button class="music-btn play-btn" id="musicPlayBtn">▶</button>
+          <button class="music-btn" id="musicNextBtn">⏭</button>
+        </div>
+        <div class="music-mode-badge" id="musicModeBadge">🔁 列表循环</div>
+      </div>
+      <div class="music-right">
+        <div class="music-header">
+          <h3>🎵 播放列表</h3>
+          <span id="musicCount" style="font-size:14px;color:#888;">0 首</span>
+        </div>
+        <div class="music-list" id="musicList">
+          <div style="text-align:center;color:#666;margin-top:20%;font-size:16px;">暂无音乐，请扫码上传</div>
+        </div>
+        <div class="music-footer">
+          <button class="qr-close" id="musicAdminToggleBtn" style="background:rgba(255,255,255,0.05); border-color:#aaa; color:#aaa;">⚙️ 管理二维码</button>
+          <button class="qr-close" id="musicCloseBtn">关闭播放器</button>
+        </div>
+
+        <div class="music-admin-panel" id="musicAdminPanel">
+          <div class="qr-title">📱 扫码进入后台管理</div>
+          <div class="qr-box" id="musicAdminQrcode"></div>
+          <div class="code-text">
+            配对码<br>
+            <span id="musicAdminCodeDisplay">------</span>
+          </div>
+          <button class="qr-close back-btn" id="closeMusicAdminBtn">返 回</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <audio id="musicAudio" preload="auto"></audio>
+
+  <div class="qr-modal" id="qrModal" tabindex="-1">
+    <div class="qr-content">
+      <div class="qr-title">📱 扫码进入呼叫端</div>
+      <div class="qr-body">
+        <div id="qrcode"><div style="color:#666;padding:80px 40px;font-size:26px;">二维码生成中...</div></div>
+        <div class="qr-details">
+          <div class="qr-hint">请使用手机扫码<br>将自动跳转至呼叫页面</div>
+        </div>
+      </div>
+      <button class="qr-close" id="qrCloseBtn" tabindex="0">关 闭</button>
+    </div>
+  </div>
+
+  <div class="qr-modal" id="adminQrModal" tabindex="-1">
+    <div class="qr-content">
+      <div class="qr-title">⚙️ 扫码进入后台</div>
+      <div class="qr-body">
+        <div id="adminQrcode"><div style="color:#666;padding:80px 40px;font-size:26px;">二维码生成中...</div></div>
+        <div class="qr-details">
+          <div class="qr-hint">
+            配对码<br>
+            <span id="adminCodeDisplay" style="font-size:72px;letter-spacing:10px;color:#00ff9d;font-weight:900;display:block;margin:16px 0;">------</span>
+            扫码进入后台管理页面
+          </div>
+        </div>
+      </div>
+      <button class="qr-close" id="adminQrCloseBtn" tabindex="0">关 闭</button>
+    </div>
+  </div>
+
+  <audio id="p2pRemoteAudio" autoplay playsinline></audio>
+</div>
+
+<video id="p2pRemoteVideo" muted autoplay playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false"></video>
+
+<div id="p2pCallerRoot">
+  <div class="p2p-inner">
+    <h1>🎙️ P2P 语音对讲</h1>
+    <p id="status">正在初始化…</p>
+    <div id="chat" class="hide">
+      <div id="msgs"></div>
+      <div class="row">
+        <input id="input" placeholder="输入消息..." disabled>
+        <button id="btnSend" disabled>发送</button>
+      </div>
+    </div>
+    <button id="btnVoice" class="success hide">🎤 开始语音对讲</button>
+    <button id="btnVideo" class="hide">📹 视频通话</button>
+    <button id="btnPTT" class="hide">🎤 按住说话</button>
+    <button id="btnHangup" class="danger hide">📞 挂断语音</button>
+  </div>
+  <audio id="remoteAudio" autoplay playsinline></audio>
+  <div id="callStage">
+    <video id="remoteVideo" autoplay playsinline></video>
+    <video id="localVideo" autoplay playsinline muted></video>
+    <div id="callStatus">正在呼叫…</div>
+    <div class="call-controls">
+      <button id="btnMuteMic" class="ctl" title="麦克风">🎤</button>
+      <button id="btnSwitchCam" class="ctl" title="切换摄像头">🔄</button>
+      <button id="btnVideoHangup" class="ctl danger" title="挂断">📞</button>
+    </div>
+  </div>
+  <div id="incomingCall">
+    <div class="incoming-inner">
+      <div class="incoming-icon">📹</div>
+      <div class="incoming-title">视频来电</div>
+      <div class="incoming-sub">对方请求与你视频通话</div>
+      <div class="incoming-btns">
+        <button id="btnReject" title="拒绝">📞</button>
+        <button id="btnAccept" title="接听">📹</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="fullscreenText" style="position:fixed;inset:0;background:rgba(0,0,0,.92);color:#00ff9d;display:none;align-items:center;justify-content:center;z-index:99999;font-size:10vw;font-weight:900;text-align:center;padding:4vw;word-break:break-all;line-height:1.2;font-family:var(--font-tech);pointer-events:none;user-select:none;text-shadow:0 0 30px rgba(0,255,157,.9);"></div>
+
+<script>
+/* 极简右下角小字提示（低调版） */
+function showSmallToast(text) {
+  let el = document.getElementById('smallToast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'smallToast';
+    el.style.cssText = 'position:fixed;right:30px;bottom:70px;z-index:100000;background:rgba(0,0,0,0.6);color:rgba(255,255,255,0.7);padding:6px 14px;border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:15px;pointer-events:none;opacity:0;transition:opacity .4s ease;font-family:var(--font-tech);white-space:nowrap;';
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  el.style.opacity = '1';
+  if (window.__toastTimer) clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => { el.style.opacity = '0'; }, 2500);
+}
+
+var centerPanel=document.getElementById('centerPanel'), periodBanner=document.getElementById('periodBanner');
+var timerSection=document.getElementById('timerSection'), nightSection=document.getElementById('nightSection');
+var morningSection=document.getElementById('morningSection'), div1=document.getElementById('div1'), div2=document.getElementById('div2');
+var currentState='default';
+var timerOriginalHTML = timerSection.innerHTML;
+var bgImage = document.getElementById('bgImage');
+var bgImageEnabled = true;
+var IMAGE_FILES = { default: 'bjsp/常规时段.jpg', morning: 'bjsp/包早时段.jpg', night: 'bjsp/包宿时段.jpg' };
+var voiceEnable = true;
+
+var PERIOD_FILES = { morning: 'audio/包早背景版.mp3', night: 'audio/包宿时段已开启.mp3' };
+var periodAudios = { morning: new Audio(PERIOD_FILES.morning), night: new Audio(PERIOD_FILES.night) };
+var currentPeriodAudio = null;
+periodAudios.morning.preload = 'auto';
+periodAudios.night.preload = 'auto';
+
+/* 🔥 核心新增：监听音乐播放状态 */
+var _musicAudio = document.getElementById('musicAudio');
+if (_musicAudio) {
+  _musicAudio.addEventListener('play', function(){ window.__isMusicPlaying = true; });
+  _musicAudio.addEventListener('pause', function(){ window.__isMusicPlaying = false; });
+  _musicAudio.addEventListener('ended', function(){ window.__isMusicPlaying = false; });
+}
+
+function updateCustomAudio(key, url) {
+  if (key === 'morning') {
+    PERIOD_FILES.morning = url;
+    periodAudios.morning = new Audio(url);
+    periodAudios.morning.preload = 'auto';
+    var ctx = initAudioContext();
+    if(ctx && ctx.decodeAudioData){
+      fetch(url).then(r=>r.arrayBuffer()).then(ab=>ctx.decodeAudioData(ab)).then(buf=>{ periodBuffers.morning = buf; });
+    }
+  } else if (key === 'night') {
+    PERIOD_FILES.night = url;
+    periodAudios.night = new Audio(url);
+    periodAudios.night.preload = 'auto';
+    var ctx = initAudioContext();
+    if(ctx && ctx.decodeAudioData){
+      fetch(url).then(r=>r.arrayBuffer()).then(ab=>ctx.decodeAudioData(ab)).then(buf=>{ periodBuffers.night = buf; });
+    }
+  }
+}
+
+function fetchWeather() {
+  var city = '阜新';
+  var descEl = document.getElementById('weatherDescBig');
+  if(descEl) descEl.textContent = '刷新中...';
+  var enToZh = {
+    'sunny': '晴', 'clear': '晴', 'partly cloudy': '局部多云', 'cloudy': '多云', 'overcast': '阴',
+    'mist': '薄雾', 'fog': '雾', 'freezing fog': '冻雾', 'patchy rain nearby': '局部有雨',
+    'patchy light rain': '零星小雨', 'light rain': '小雨', 'light drizzle': '毛毛雨',
+    'moderate rain': '中雨', 'heavy rain': '大雨', 'patchy light rain with thunder': '雷阵雨',
+    'thundery outbreaks possible': '可能有雷暴', 'light snow': '小雪', 'moderate snow': '中雪',
+    'heavy snow': '大雪', 'blizzard': '暴风雪', 'patchy light snow': '零星小雪', 'sleet': '雨夹雪'
+  };
+  function translateWeather(text) {
+    if (!text) return '多云';
+    var lower = text.toLowerCase().trim();
+    if (enToZh[lower]) return enToZh[lower];
+    for (var key in enToZh) { if (lower.indexOf(key) !== -1) return enToZh[key]; }
+    if (/[\u4e00-\u9fa5]/.test(text)) return text;
+    return '多云';
+  }
+  var apis = [
+    { url: 'https://api.vvhan.com/api/weather?city=' + encodeURIComponent(city), parse: function(d){ return d&&d.success&&d.info?{city:d.info.city||city,type:d.info.type||'多云',tem:d.info.tem||d.info.tem2||'--'}:null; } },
+    { url: 'https://api.pearktrue.cn/api/weather/?city=' + encodeURIComponent(city), parse: function(d){ return d&&d.code===200&&d.data?{city:d.data.city||city,type:d.data.weather||'多云',tem:d.data.temperature||'--'}:null; } },
+    { url: 'https://wttr.in/Fuxin?format=j1&lang=zh', parse: function(d){
+      if(d && d.current_condition && d.current_condition.length > 0){
+        var c=d.current_condition[0];
+        var t=(c.lang_zh&&c.lang_zh.length>0)?c.lang_zh[0].value:(c.weatherDesc&&c.weatherDesc.length>0?c.weatherDesc[0].value:'');
+        return {city:city,type:t,tem:c.temp_C};
+      } return null;
+    }}
+  ];
+  function tryFetch(index) {
+    if (index >= apis.length) { fallbackWeather(city); return; }
+    var api = apis[index];
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function(){ controller.abort(); }, 8000);
+    fetch(api.url, { cache: 'no-store', signal: controller.signal })
+      .then(function(res) { clearTimeout(timeoutId); if(!res.ok) throw new Error(res.status); return res.json(); })
+      .then(function(data) {
+        var result = api.parse(data);
+        if (result) {
+          var finalType = translateWeather(result.type);
+          document.getElementById('weatherCityBig').textContent = result.city;
+          document.getElementById('weatherDescBig').textContent = finalType;
+          document.getElementById('weatherTempBig').textContent = result.tem + '°';
+          var iconMap = { '晴': '☀️', '多云': '⛅', '阴': '☁️', '小雨': '🌧️', '中雨': '🌧️', '大雨': '🌧️', '雷阵雨': '⛈️', '小雪': '❄️', '中雪': '❄️', '大雪': '❄️', '雾': '🌫️', '霾': '🌫️' };
+          var icon = '🌤️';
+          for (var key in iconMap) { if (finalType.indexOf(key) !== -1) { icon = iconMap[key]; break; } }
+          document.getElementById('weatherIconBig').textContent = icon;
+        } else { throw new Error('parse'); }
+      })
+      .catch(function(){ clearTimeout(timeoutId); tryFetch(index + 1); });
+  }
+  tryFetch(0);
+}
+function fallbackWeather(city) {
+  document.getElementById('weatherCityBig').textContent = city;
+  document.getElementById('weatherDescBig').textContent = '多云';
+  document.getElementById('weatherTempBig').textContent = '22°';
+  document.getElementById('weatherIconBig').textContent = '⛅';
+}
+fetchWeather();
+setInterval(fetchWeather, 30 * 60 * 1000);
+
+var audioCtx = null;
+function initAudioContext(){
+  if(!audioCtx){ var C=window.AudioContext||window.webkitAudioContext; if(C) audioCtx = new C(); }
+  if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(function(){});
+  return audioCtx;
+}
+var periodBuffers = {}, periodBuffersLoading = false;
+function loadPeriodBuffers() {
+  if (periodBuffersLoading) return;
+  periodBuffersLoading = true;
+  var ctx = initAudioContext();
+  if (!ctx || !ctx.decodeAudioData || typeof fetch !== 'function') return;
+  Object.keys(PERIOD_FILES).forEach(function(k) {
+    fetch(PERIOD_FILES[k]).then(function(r){ if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+      .then(function(ab){ return ctx.decodeAudioData(ab); })
+      .then(function(buf){ periodBuffers[k] = buf; }).catch(function(e){});
+  });
+}
+var hourlyBuffers = {}, hourlyBuffersLoading = false;
+function loadHourlyBuffers() {
+  if (hourlyBuffersLoading) return;
+  hourlyBuffersLoading = true;
+  var ctx = initAudioContext();
+  if (!ctx || !ctx.decodeAudioData || typeof fetch !== 'function') return;
+  for (var i = 0; i < 24; i++) {
+    var hStr = String(i).padStart(2, '0');
+    (function(h, u) {
+      fetch(u).then(function(r){ if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+        .then(function(ab){ return ctx.decodeAudioData(ab); })
+        .then(function(buf){ hourlyBuffers[h] = buf; }).catch(function(e){});
+    })(hStr, 'audio/' + hStr + '.wav');
+  }
+}
+var audioUnlocked = false;
+function unlockLocalAudio() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  var ctx = initAudioContext(); if (!ctx) return;
+  try { var buf=ctx.createBuffer(1,1,22050),src=ctx.createBufferSource(); src.buffer=buf; src.connect(ctx.destination); src.start(0); } catch(e){}
+  var ra = document.getElementById('p2pRemoteAudio');
+  if (ra) { ra.muted=true; ra.play().then(function(){ra.pause();ra.muted=false;}).catch(function(){ra.muted=false;}); }
+  loadPeriodBuffers(); loadHourlyBuffers();
+}
+document.addEventListener('click', unlockLocalAudio, { once: true });
+document.addEventListener('touchstart', unlockLocalAudio, { once: true });
+document.addEventListener('keydown', unlockLocalAudio, { once: true });
+
+function playSoundOn(){ var ctx=initAudioContext();if(!ctx)return;var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.setValueAtTime(580,ctx.currentTime);o.frequency.linearRampToValueAtTime(880,ctx.currentTime+.08);g.gain.setValueAtTime(.22,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.15);o.start();o.stop(ctx.currentTime+.15); }
+function playSoundOff(){ var ctx=initAudioContext();if(!ctx)return;var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.setValueAtTime(360,ctx.currentTime);o.frequency.linearRampToValueAtTime(220,ctx.currentTime+.08);g.gain.setValueAtTime(.22,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.15);o.start();o.stop(ctx.currentTime+.15); }
+function playMessageChime() { if (!voiceEnable) return; var ctx=initAudioContext(); if(!ctx) return; if(ctx.state==='suspended') ctx.resume().catch(function(){}); var now=ctx.currentTime; [1200,1600].forEach(function(freq,i){ var o=ctx.createOscillator(),g=ctx.createGain(); o.type='sine'; o.frequency.setValueAtTime(freq,now+i*.12); g.gain.setValueAtTime(.2,now+i*.12); g.gain.exponentialRampToValueAtTime(.001,now+i*.12+.22); o.connect(g);g.connect(ctx.destination); o.start(now+i*.12);o.stop(now+i*.12+.24); }); }
+
+function playPeriodChime(kind) {
+  if (!voiceEnable) return;
+  var ctx = initAudioContext();
+  if (ctx && periodBuffers[kind]) {
+    if (ctx.state === 'suspended') ctx.resume().catch(function(){});
+    try { var src=ctx.createBufferSource(); src.buffer=periodBuffers[kind]; src.connect(ctx.destination); src.start(); return; } catch(e){}
+  }
+  var audio = periodAudios[kind]; if (!audio) return;
+  if (currentPeriodAudio && !currentPeriodAudio.paused) { currentPeriodAudio.pause(); try{currentPeriodAudio.currentTime=0;}catch(e){} }
+  currentPeriodAudio = audio; try { audio.currentTime = 0; } catch(e){}
+  var playPromise = audio.play(); if (playPromise !== undefined) playPromise.catch(function(){ unlockLocalAudio(); });
+}
+function playHourlyChime(hourStr) {
+  if (!voiceEnable) return;
+  var ctx = initAudioContext();
+  if (ctx && hourlyBuffers[hourStr]) {
+    if (ctx.state === 'suspended') ctx.resume().catch(function(){});
+    try { var src=ctx.createBufferSource(); src.buffer=hourlyBuffers[hourStr]; src.connect(ctx.destination); src.start(); return; } catch(e){}
+  }
+  try { var audio=new Audio('audio/'+hourStr+'.wav'); var p=audio.play(); if(p&&p.catch) p.catch(function(){ playHourlyChimeSynth(); }); return; } catch(e){}
+  playHourlyChimeSynth();
+}
+function playHourlyChimeSynth() {
+  var ctx=initAudioContext(); if(!ctx) return; if(ctx.state==='suspended') ctx.resume().catch(function(){});
+  var now=ctx.currentTime;
+  [880,1320,1760].forEach(function(freq,i){ var o=ctx.createOscillator(),g=ctx.createGain(); o.type='sine'; o.frequency.setValueAtTime(freq,now+i*.18); g.gain.setValueAtTime(.18,now+i*.18); g.gain.exponentialRampToValueAtTime(.001,now+i*.18+.28); o.connect(g);g.connect(ctx.destination); o.start(now+i*.18);o.stop(now+i*.18+.32); });
+}
+
+window.onload = function() {
+  document.getElementById('musicBtn').addEventListener('click', function() { document.getElementById('musicModal').classList.add('show'); if(window.renderMusicList) window.renderMusicList(); });
+  document.getElementById('musicCloseBtn').addEventListener('click', function() { document.getElementById('musicModal').classList.remove('show'); document.getElementById('musicBtn').focus(); });
+  document.getElementById('musicAdminToggleBtn').addEventListener('click', function() {
+    document.getElementById('musicAdminPanel').classList.add('show');
+    var el = document.getElementById('musicAdminQrcode'), codeEl = document.getElementById('musicAdminCodeDisplay');
+    if (codeEl) codeEl.textContent = window.__TV_CODE || '------';
+    if (typeof window.ensureQRCode === 'function') {
+      window.ensureQRCode(function(){
+        if(window.__TV_ID) {
+          var url = 'https://2383534802.github.io/lufei-tv/remote.html?host=' + encodeURIComponent(window.__TV_ID) + '&code=' + encodeURIComponent(window.__TV_CODE||'');
+          el.innerHTML = ''; try { new QRCode(el, { text: url, width: 260, height: 260, correctLevel: QRCode.CorrectLevel.M }); } catch(e){}
+        } else el.innerHTML = '<div style="color:#f66;padding:20px;font-size:16px;">等待连接中</div>';
+      });
+    }
+    setTimeout(function(){ document.getElementById('closeMusicAdminBtn').focus(); }, 100);
+  });
+  document.getElementById('closeMusicAdminBtn').addEventListener('click', function() { document.getElementById('musicAdminPanel').classList.remove('show'); document.getElementById('musicAdminToggleBtn').focus(); });
+  document.getElementById('qrBtn').addEventListener('click', function() { document.getElementById('qrModal').classList.add('show'); if(window.rebuildQR) window.rebuildQR(); setTimeout(function(){ document.getElementById('qrCloseBtn').focus(); }, 100); });
+  document.getElementById('qrCloseBtn').addEventListener('click', function() { document.getElementById('qrModal').classList.remove('show'); document.getElementById('qrBtn').focus(); });
+  document.getElementById('adminIdBtn').addEventListener('click', function() { document.getElementById('adminQrModal').classList.add('show'); if(window.buildAdminQR) window.buildAdminQR(); setTimeout(function(){ document.getElementById('adminQrCloseBtn').focus(); }, 100); });
+  document.getElementById('adminQrCloseBtn').addEventListener('click', function() { document.getElementById('adminQrModal').classList.remove('show'); document.getElementById('adminIdBtn').focus(); });
+  document.getElementById('bgVideoBtn').addEventListener('click', function() { var bgBtn=this; bgImageEnabled=!bgImageEnabled; if(bgImageEnabled){ bgBtn.innerText='🖼️ 背景开启'; bgBtn.classList.remove('off'); bgImage.style.display='block'; if(window.updateBgImage) window.updateBgImage(currentState); } else { bgBtn.innerText='🖼️ 背景关闭'; bgBtn.classList.add('off'); bgImage.style.display='none'; } });
+  document.getElementById('voiceBtn').addEventListener('click', function() {
+    var vBtn=this; voiceEnable=!voiceEnable;
+    if(voiceEnable){ playSoundOn(); initAudioContext(); loadHourlyBuffers(); vBtn.innerText='🔊 语音开启'; vBtn.classList.remove('off'); if(currentState==='night')playPeriodChime('night');else if(currentState==='morning')playPeriodChime('morning'); }
+    else { playSoundOff(); vBtn.innerText='🔇 语音关闭'; vBtn.classList.add('off'); if(currentPeriodAudio&&!currentPeriodAudio.paused){currentPeriodAudio.pause();try{currentPeriodAudio.currentTime=0;}catch(e){}} }
+  });
+};
+
+function fitStage(){ var sw=window.innerWidth,sh=window.innerHeight,scale=Math.min(sw/1920,sh/1080),stage=document.getElementById('stage'); stage.style.transform='scale('+scale+')'; stage.style.left=(sw-1920*scale)/2+'px'; stage.style.top=(sh-1080*scale)/2+'px'; }
+fitStage(); window.addEventListener('resize',fitStage);
+
+var lastHourlyChime = -1;
+function updateClock(){
+  var now = new Date();
+  document.getElementById('clock').textContent = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('dateLine').textContent = now.getFullYear()+'/'+(now.getMonth()+1)+'/'+now.getDate()+' '+'日一二三四五六'[now.getDay()];
+  if (now.getMinutes() === 0 && now.getSeconds() <= 2) {
+    var hourKey = now.getFullYear()*100000 + (now.getMonth()+1)*1000 + now.getDate()*10 + now.getHours();
+    if (lastHourlyChime !== hourKey) { lastHourlyChime = hourKey; playHourlyChime(String(now.getHours()).padStart(2, '0')); }
+  }
+}
+updateClock(); setInterval(updateClock, 1000);
+
+function reorderCenter(o){ o.forEach(function(el){ centerPanel.appendChild(el); }); }
+function updateBgImage(state){ if(!bgImage||!bgImageEnabled)return; var src=IMAGE_FILES[state]||IMAGE_FILES['default']; if(src)bgImage.style.backgroundImage='url('+src+')'; else bgImage.style.backgroundImage='none'; }
+window.updateBgImage = updateBgImage;
+window.getTimerMiniCardsHTML = function(){
+  var timerData = (window.tvConfig && window.tvConfig.prices && window.tvConfig.prices.timer) ? window.tvConfig.prices.timer : null;
+  if (timerData && timerData.cards) {
+    return '<div class="section-header"><span class="indicator"></span><span class="title">'+(timerData.title||'计时价格')+'</span><span class="tag">'+(timerData.unit||'元 / 小时')+'</span></div><div class="cards-row">'+
+      timerData.cards.map(function(c) { return '<div class="card-item" style="--card-accent:'+(c.accent||'#00ff9d')+';"><div class="card-name">'+(c.name||'')+'</div><div class="card-price">'+(c.price||'')+'</div><div class="card-config">'+(c.config||'')+'</div></div>'; }).join('')+'</div>';
+  }
+  return '<div class="section-header"><span class="indicator"></span><span class="title">计时价格</span><span class="tag">元 / 小时</span></div><div class="cards-row"><div class="card-item" style="--card-accent:#00ff9d;"><div class="card-name">大厅</div><div class="card-price">11</div><div class="card-config">9700X + 5070</div></div></div>';
+};
+
+function applyPromotedLayout(type,playAudio){
+  var s,o,l,bc,sch=getScheduleConfig();
+  if(type==='night'){
+    s=nightSection; o=morningSection; bc='night';
+    var syncNight = sch.syncNightTime === true;
+    if (syncNight) {
+      l = sch.nightBanner ? sch.nightBanner : ('🌙 包宿时段 ' + sch.nightStart + ' - ' + sch.nightEnd);
+    } else {
+      l = sch.nightBanner ? sch.nightBanner : '🌙 包宿时段';
+    }
+  } else {
+    s=morningSection; o=nightSection; bc='morning';
+    var syncMorning = sch.syncMorningTime === true;
+    if (syncMorning) {
+      l = sch.morningBanner ? sch.morningBanner : ('☀️ 包早时段 ' + sch.morningStart + ' - ' + sch.morningEnd);
+    } else {
+      l = sch.morningBanner ? sch.morningBanner : '☀️ 包早时段';
+    }
+  }
+  periodBanner.textContent=l; periodBanner.className='period-banner show '+bc;
+  reorderCenter([s,div1,timerSection,div2,o]); s.classList.add('promoted'); o.classList.remove('promoted');
+  timerSection.innerHTML=window.getTimerMiniCardsHTML(); currentState=type; updateBgImage(type);
+  if (playAudio) playPeriodChime(type);
+}
+function setDefaultLayout(){
+  reorderCenter([timerSection,div1,nightSection,div2,morningSection]);
+  timerSection.innerHTML=timerOriginalHTML; periodBanner.className='period-banner show';
+  periodBanner.textContent='电竞价目表'; currentState='default'; updateBgImage('default');
+}
+function timeStrToMin(s){var m=/^(\d{1,2}):(\d{2})$/.exec(String(s||''));if(!m)return -1;var h=parseInt(m[1],10),mi=parseInt(m[2],10);if(isNaN(h)||isNaN(mi)||h<0||h>23||mi<0||mi>59)return -1;return h*60+mi;}
+function inMinRange(tm,start,end){if(start<0||end<0||start===end)return false;if(start<end)return tm>=start&&tm<end;return tm>=start||tm<end;}
+function getScheduleConfig(){
+  var def={morningStart:'07:00',morningEnd:'13:00',nightStart:'21:55',nightEnd:'07:00',morningBanner:'',nightBanner:'',syncMorningTime:false,syncNightTime:false};
+  if(window.__TV_SCHEDULE){
+    var sch=window.__TV_SCHEDULE,out={};
+    ['morningStart','morningEnd','nightStart','nightEnd','morningBanner','nightBanner'].forEach(function(k){out[k]=(typeof sch[k]==='string')?sch[k]:def[k];});
+    out.syncMorningTime = sch.syncMorningTime === true;
+    out.syncNightTime = sch.syncNightTime === true;
+    return out;
+  }
+  return def;
+}
+
+/* 🔥 修复：时段切换逻辑，加入 isInit 静默处理 */
+function getCurrentScheduleState(){
+  var n=new Date(),tm=n.getHours()*60+n.getMinutes(),sch=getScheduleConfig();
+  if(inMinRange(tm,timeStrToMin(sch.morningStart),timeStrToMin(sch.morningEnd)))return 'morning';
+  if(inMinRange(tm,timeStrToMin(sch.nightStart),timeStrToMin(sch.nightEnd)))return 'night';
+  return 'default';
+}
+
+function checkSchedule(isInit){
+  var st=getCurrentScheduleState();
+  if(st!==currentState){
+    if(st==='default') setDefaultLayout();
+    else applyPromotedLayout(st, isInit ? false : true); // 初始化时不播放音频
+  }
+}
+
+// 页面加载后，立刻静默应用一次当前的布局（不播声音）
+(function initScheduleLayout(){
+  var st = getCurrentScheduleState();
+  if(st === 'default') setDefaultLayout();
+  else applyPromotedLayout(st, false);
+})();
+
+// 5秒轮询：只有真正的时段变化才播报
+setInterval(function(){ checkSchedule(false); }, 5000);
+
+var timePanel=document.getElementById('timePanel'), weatherPanel=document.getElementById('weatherPanel'), infoShowWeather=false;
+function toggleInfoPanel(){ if(infoShowWeather){timePanel.classList.add('active');weatherPanel.classList.remove('active');}else{weatherPanel.classList.add('active');timePanel.classList.remove('active');} infoShowWeather=!infoShowWeather; }
+setInterval(toggleInfoPanel,5000);
+
+var connect = null, connectedDevices = new Set(), anonSeq = 0;
+function pickConnId(a){ if(!a)return null; if(typeof a==='string'||typeof a==='number')return String(a); var v=a.connectId||a.connection||a.connId||a.id||a.uid; return (v===undefined||v===null||v==='')?null:String(v); }
+function addConnected(a){ var id=pickConnId(a); if(!id)id='__anon_'+(++anonSeq); connectedDevices.add(id); return id; }
+function removeConnected(a){ var id=pickConnId(a); if(id&&connectedDevices.has(id)){connectedDevices.delete(id);return;} var anon=null; connectedDevices.forEach(function(k){if(anon===null&&String(k).indexOf('__anon_')===0)anon=k;}); if(anon!==null)connectedDevices.delete(anon); }
+
+var fullscreenText = document.getElementById('fullscreenText');
+var remoteAudio = document.getElementById('p2pRemoteAudio');
+var remoteVideo = document.getElementById('p2pRemoteVideo');
+var fullscreenTimer=null, audioPC=null, videoPC=null, videoStream=null, pttPC=null, pttStream=null, filePC=null;
+var videoRemoteDescSet=false, videoIceBuffer=[], audioRemoteDescSet=false, audioIceBuffer=[];
+var remoteAudioSource = null;
+
+function resetP2P() {
+  if(audioPC){try{audioPC.close();}catch(e){}audioPC=null;}
+  if(videoPC){try{videoPC.close();}catch(e){}videoPC=null;}
+  if(pttPC){try{pttPC.close();}catch(e){}pttPC=null;}
+  if(filePC){try{filePC.close();}catch(e){}filePC=null;}
+  if(videoStream){videoStream.getTracks().forEach(function(t){t.stop();});videoStream=null;}
+  if(pttStream){pttStream.getTracks().forEach(function(t){t.stop();});pttStream=null;}
+  if(remoteVideo){remoteVideo.srcObject=null;remoteVideo.classList.remove('show');}
+  if(remoteAudio)remoteAudio.srcObject=null;
+  if(remoteAudioSource){try{remoteAudioSource.disconnect();}catch(e){}remoteAudioSource=null;}
+  
+  // 🔥 核心：通话断开后，标记为空闲
+  window.__isCalling = false;
+}
+
+function updateClientStatus(){
+  var el = document.getElementById('clientStatus'); if(!el) return;
+  if(!connect){ el.innerText=(typeof webconnect==='undefined')?'📱 连接组件加载中':'📱 未连接'; el.classList.remove('active'); return; }
+  var count = connectedDevices.size;
+  if(count > 0){ el.innerText='📱 已连接: '+count+' 台'; el.classList.add('active'); }
+  else { el.innerText='📱 未连接'; el.classList.remove('active'); }
+}
+updateClientStatus(); setInterval(updateClientStatus, 3000);
+
+function sendData(text){ if(!connect)return; connect.getConnection(function(a){var cid=a&&(a.connection||a.connectId); if(cid)connect.Send(text,{connectId:cid});}); }
+window.__sendData = sendData;
+function showFullscreenText(text){ if(!text)return; fullscreenText.textContent=text; fullscreenText.style.display='flex'; if(fullscreenTimer)clearTimeout(fullscreenTimer); fullscreenTimer=setTimeout(function(){fullscreenText.style.display='none';},10000); }
+
+var RTC_CONFIG={iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]};
+function attachRemoteAudio(stream) {
+  if(!stream) return; var ra=document.getElementById('p2pRemoteAudio'); if(!ra)return;
+  if(remoteAudioSource){try{remoteAudioSource.disconnect();}catch(e){}remoteAudioSource=null;}
+  ra.srcObject=stream; ra.muted=false; ra.volume=1;
+  var playPromise=ra.play();
+  if(playPromise!==undefined){ playPromise.catch(function(err){ var ctx=initAudioContext(); if(ctx&&ctx.createMediaStreamSource){ if(ctx.state==='suspended')ctx.resume().catch(function(){}); try{remoteAudioSource=ctx.createMediaStreamSource(stream);remoteAudioSource.connect(ctx.destination);ra.muted=true;}catch(e){} } }); }
+}
+function createAudioPC(){
+  var pc=new RTCPeerConnection(RTC_CONFIG);
+  pc.onicecandidate=function(e){if(e.candidate)sendData(JSON.stringify({type:'audio-ice',candidate:e.candidate}));};
+  pc.ontrack=function(e){var stream=(e.streams&&e.streams[0])?e.streams[0]:null;if(!stream){stream=new MediaStream();stream.addTrack(e.track);}attachRemoteAudio(stream);};
+  return pc;
+}
+function createVideoPC(){
+  var pc=new RTCPeerConnection(RTC_CONFIG); videoStream=new MediaStream();
+  pc.onicecandidate=function(e){if(e.candidate)sendData(JSON.stringify({type:'video-ice',candidate:e.candidate}));};
+  pc.ontrack=function(e){ var track=e.track; if(videoStream&&videoStream.getTracks().indexOf(track)===-1)videoStream.addTrack(track); remoteVideo.srcObject=videoStream; remoteVideo.play().catch(function(){}); if(track.kind==='audio'){var audioOnly=new MediaStream([track]);attachRemoteAudio(audioOnly);} };
+  return pc;
+}
+function handleAudioSignal(m){
+  var type=m.type.replace('ptt-','audio-');
+  if(type==='audio-offer'){
+    window.__isCalling = true; // 🔥 核心：标记忙碌
+    if(videoPC)resetP2P();
+    try{ resetP2P(); window.__isCalling = true; audioIceBuffer=[];audioRemoteDescSet=false;audioPC=createAudioPC(); audioPC.setRemoteDescription(new RTCSessionDescription({type:'offer',sdp:m.sdp})).then(function(){audioRemoteDescSet=true;return audioPC.createAnswer();}).then(function(ans){return audioPC.setLocalDescription(ans).then(function(){audioIceBuffer.forEach(function(c){audioPC.addIceCandidate(new RTCIceCandidate(c)).catch(function(){});});audioIceBuffer=[];sendData(JSON.stringify({type:'audio-answer',sdp:ans.sdp}));});}).catch(function(){}); }catch(e){}
+  }else if(type==='audio-ice'){ if(!audioPC||!m.candidate)return; if(!audioRemoteDescSet){audioIceBuffer.push(m.candidate);return;} try{audioPC.addIceCandidate(new RTCIceCandidate(m.candidate)).catch(function(){});}catch(e){}
+  }else if(type==='audio-hangup'){ resetP2P(); }
+}
+function handleVideoSignal(m){
+  if(m.type==='video-offer'){
+    window.__isCalling = true; // 🔥 核心：标记忙碌
+    if(audioPC)resetP2P();
+    try{ resetP2P(); window.__isCalling = true; videoIceBuffer=[];videoRemoteDescSet=false;videoPC=createVideoPC(); videoPC.setRemoteDescription(new RTCSessionDescription({type:'offer',sdp:m.sdp})).then(function(){videoRemoteDescSet=true;return videoPC.createAnswer();}).then(function(ans){return videoPC.setLocalDescription(ans).then(function(){videoIceBuffer.forEach(function(c){videoPC.addIceCandidate(new RTCIceCandidate(c)).catch(function(){});});videoIceBuffer=[];sendData(JSON.stringify({type:'video-answer',sdp:ans.sdp}));remoteVideo.classList.add('show');});}).catch(function(){}); }catch(e){}
+  }else if(m.type==='video-ice'){ if(!videoPC||!m.candidate)return; if(!videoRemoteDescSet){videoIceBuffer.push(m.candidate);return;} try{videoPC.addIceCandidate(new RTCIceCandidate(m.candidate)).catch(function(){});}catch(e){}
+  }else if(m.type==='video-hangup'){ resetP2P(); }
+}
+
+var fileBuffer=[], fileInfo={name:'', targetType:''};
+function handleFileSignal(m,sendFn){
+  var sfn=(typeof sendFn==='function')?sendFn:sendData;
+  if(m.type==='file-offer'){
+    try{
+      if(filePC){try{filePC.close();}catch(e){}filePC=null;}
+      filePC=new RTCPeerConnection(RTC_CONFIG); fileBuffer=[];
+      filePC.onicecandidate=function(e){if(e.candidate)sfn(JSON.stringify({type:'file-ice',candidate:e.candidate}));};
+      filePC.ondatachannel=function(event){
+        var channel=event.channel; channel.binaryType='arraybuffer';
+        channel.onmessage=function(e){
+          if(typeof e.data==='string'){
+            try{ var ctrl=JSON.parse(e.data); 
+              if(ctrl.type==='file-start'){
+                fileBuffer=[];
+                fileInfo.name=ctrl.name;
+                fileInfo.targetType=ctrl.targetType||''; 
+                if (fileInfo.targetType) showSmallToast('接收中: ' + ctrl.name);
+              } else if(ctrl.type==='file-end'){
+                var blob=new Blob(fileBuffer,{type:'audio/mpeg'});
+                var url=URL.createObjectURL(blob);
+                
+                if (fileInfo.targetType === 'morning') {
+                  updateCustomAudio('morning', url);
+                  showSmallToast('✅ 包早音频更新成功');
+                } else if (fileInfo.targetType === 'night') {
+                  updateCustomAudio('night', url);
+                  showSmallToast('✅ 包宿音频更新成功');
+                } else {
+                  if(window.TVMusic&&window.TVMusic.handleLocalUpload)window.TVMusic.handleLocalUpload(fileInfo.name,url);
+                }
+                fileBuffer=[];
+              } 
+            }catch(err){}
+          }else{fileBuffer.push(e.data);}
+        };
+      };
+      filePC.setRemoteDescription(new RTCSessionDescription({type:'offer',sdp:m.sdp})).then(function(){return filePC.createAnswer();}).then(function(ans){return filePC.setLocalDescription(ans);}).then(function(){sfn(JSON.stringify({type:'file-answer',sdp:filePC.localDescription.sdp}));}).catch(function(e){showSmallToast('❌ 文件通道建立失败');});
+    }catch(e){}
+  }else if(m.type==='file-ice'){ if(filePC&&m.candidate)filePC.addIceCandidate(new RTCIceCandidate(m.candidate)).catch(function(){}); }
+}
+
+var pttBtn = document.getElementById('btnPTT');
+if(pttBtn){
+  pttBtn.addEventListener('mousedown', startPTT);
+  pttBtn.addEventListener('touchstart', function(e){e.preventDefault();startPTT();});
+  pttBtn.addEventListener('mouseup', stopPTT);
+  pttBtn.addEventListener('touchend', function(e){e.preventDefault();stopPTT();});
+  pttBtn.addEventListener('mouseleave', stopPTT);
+}
+function startPTT(){
+  if(pttStream)return; if(pttBtn)pttBtn.classList.add('talking');
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+    pttStream=stream; pttPC=new RTCPeerConnection(RTC_CONFIG);
+    pttPC.onicecandidate=function(e){if(e.candidate)sendData(JSON.stringify({type:'audio-ice',candidate:e.candidate}));};
+    stream.getTracks().forEach(function(t){pttPC.addTrack(t,stream);});
+    pttPC.createOffer().then(function(offer){return pttPC.setLocalDescription(offer);}).then(function(){sendData(JSON.stringify({type:'audio-offer',sdp:pttPC.localDescription.sdp,mode:'ptt'}));});
+  }).catch(function(err){});
+}
+function stopPTT(){
+  if(!pttStream)return; if(pttBtn)pttBtn.classList.remove('talking');
+  pttStream.getTracks().forEach(function(t){t.stop();}); pttStream=null;
+  if(pttPC){pttPC.close();pttPC=null;} sendData(JSON.stringify({type:'audio-hangup'}));
+}
+
+var tvKeepAliveTimer=null, tvWakeLock=null;
+function destroyConnect(){
+  try{ if(connect){ if(typeof connect.close==='function')connect.close(); else if(typeof connect.disconnect==='function')connect.disconnect(); } }catch(e){}
+  connect=null; window.connect=null; connectedDevices.clear(); updateClientStatus();
+}
+function startTVKeepAlive(){
+  if(tvKeepAliveTimer)clearInterval(tvKeepAliveTimer);
+  tvKeepAliveTimer=setInterval(function(){
+    if(!connect)return;
+    try{
+      var aliveMsg=JSON.stringify({type:'tv-alive',t:Date.now()});
+      connect.getConnection(function(a){var cid=a&&(a.connection||a.connectId);if(cid)connect.Send(aliveMsg,{connectId:cid});});
+    }catch(e){}
+  },12000);
+}
+function bindConnect(conn){
+  if(!conn||conn.__bound)return; conn.__bound=true;
+  conn.onConnect(function(a){ addConnected(a); updateClientStatus(); preventTVSleep(); setTimeout(function(){ if(window.TVMusic&&window.TVMusic.forceBroadcast)window.TVMusic.forceBroadcast(); },1000); });
+  conn.onDisconnect(function(a){ removeConnected(a); updateClientStatus(); resetP2P(); });
+  conn.onReceive(function(data,from){
+    var fromId=pickConnId(from);
+    var reply=function(str){ if(fromId){try{conn.Send(str,{connectId:fromId});return;}catch(e){}} sendData(str); };
+    var raw=(data===null||data===undefined)?'':String(data), m=null;
+    try{m=JSON.parse(raw);}catch(e){}
+    if(m&&typeof m==='object'&&typeof m.type==='string'){
+      if(m.type==='ping'){reply(JSON.stringify({type:'pong',t:m.t}));return;}
+      if(m.type.indexOf('audio-')===0||m.type.indexOf('ptt-')===0){handleAudioSignal(m);return;}
+      if(m.type.indexOf('video-')===0){handleVideoSignal(m);return;}
+      if(m.type.indexOf('file-')===0){handleFileSignal(m,reply);return;}
+      if(m.type==='music-command'){if(window.TVMusic)window.TVMusic.handleCommand(m.action,m.payload);return;}
+      if(m.type==='music-request'){if(window.TVMusic&&window.TVMusic.forceBroadcast)window.TVMusic.forceBroadcast();return;}
+      if(window.TVAdmin&&(m.type==='ping'||m.type==='admin-request'||m.type==='admin-update')){window.TVAdmin.handleMessage(m,reply);return;}
+      return;
+    }
+    if(raw.length>300)return; if(raw.trim()==='')return;
+    playMessageChime(); showFullscreenText(raw);
+  });
+}
+function initConnect(){
+  if(connect)return connect;
+  try{ if(typeof webconnect!=='undefined'){ connect=webconnect(); window.connect=connect; bindConnect(connect); updateClientStatus(); startTVKeepAlive(); } }
+  catch(e){connect=null;}
+  return connect;
+}
+initConnect();
+setInterval(initConnect, 2000);
+
+function preventTVSleep(){
+  try{
+    var silentAudio=new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA");
+    silentAudio.loop=true; silentAudio.volume=0.01; silentAudio.play().catch(function(){});
+    if('wakeLock' in navigator){ navigator.wakeLock.request('screen').then(function(lock){tvWakeLock=lock;}).catch(function(){}); }
+  }catch(e){}
+}
+window.addEventListener('load', function(){ startTVKeepAlive(); preventTVSleep(); });
+
+(function(){
+  const audio=document.getElementById('musicAudio'), playBtn=document.getElementById('musicPlayBtn'), prevBtn=document.getElementById('musicPrevBtn'), nextBtn=document.getElementById('musicNextBtn');
+  const disc=document.getElementById('musicDisc'), nowTitle=document.getElementById('musicNowTitle'), modeBadge=document.getElementById('musicModeBadge');
+  const listEl=document.getElementById('musicList'), countEl=document.getElementById('musicCount');
+  let playlist=[], currentIndex=-1, isPlaying=false, playMode='list';
+
+  window.renderMusicList=function(){
+    listEl.innerHTML=''; countEl.textContent=playlist.length+' 首';
+    if(playlist.length===0){ listEl.innerHTML='<div style="text-align:center;color:#666;margin-top:20%;font-size:16px;">暂无音乐，请扫码上传</div>'; return; }
+    playlist.forEach((song,index)=>{
+      const div=document.createElement('div'); div.className='music-item'+(index===currentIndex?' active':''); div.setAttribute('tabindex','0');
+      div.innerHTML=`<span>${index+1}.</span> ${song.name}`; div.onclick=()=>playSong(index); div.onkeydown=(e)=>{if(e.key==='Enter')playSong(index);};
+      div.onfocus=()=>{setTimeout(()=>{div.scrollIntoView({block:'nearest'});},100);}; listEl.appendChild(div);
+    });
+  };
+  function playSong(index){
+    if(index<0||index>=playlist.length)return; currentIndex=index;
+    if(audio.src!==playlist[index].url){audio.src=playlist[index].url;audio.load();}
+    audio.play().then(()=>{isPlaying=true;updateUI();}).catch(()=>{isPlaying=false;updateUI();});
+  }
+  function togglePlay(){ if(currentIndex===-1&&playlist.length>0){playSong(0);return;} if(audio.paused){audio.play().then(()=>{isPlaying=true;updateUI();});}else{audio.pause();isPlaying=false;updateUI();} }
+  function playPrev(){ if(playlist.length===0)return; let idx=currentIndex-1; if(idx<0)idx=playlist.length-1; playSong(idx); }
+  function playNext(){ if(playlist.length===0)return; let idx=currentIndex+1; if(idx>=playlist.length)idx=0; playSong(idx); }
+  function updateUI(){
+    window.renderMusicList(); if(currentIndex>=0)nowTitle.textContent=playlist[currentIndex].name; else nowTitle.textContent="暂无播放";
+    if(isPlaying){playBtn.textContent='⏸';disc.classList.add('playing');}else{playBtn.textContent='▶';disc.classList.remove('playing');}
+    if(modeBadge){if(playMode==='single'){modeBadge.textContent='🔂 单曲循环';modeBadge.className='music-mode-badge single';}else{modeBadge.textContent='🔁 列表循环';modeBadge.className='music-mode-badge';}}
+    var topMusicBtn=document.getElementById('musicBtn'); if(topMusicBtn){if(isPlaying)topMusicBtn.classList.add('playing');else topMusicBtn.classList.remove('playing');}
+    broadcastState();
+  }
+  audio.onended=function(){ if(playMode==='single')playSong(currentIndex); else playNext(); };
+  playBtn.onclick=togglePlay; prevBtn.onclick=playPrev; nextBtn.onclick=playNext;
+  function getState(){ return {type:'music-state',playlist:playlist.map(function(p){return {name:p.name};}),currentIndex:currentIndex,isPlaying:isPlaying,currentTime:audio.currentTime||0,duration:audio.duration||0,playMode:playMode,volume:audio.volume}; }
+  window.TVMusic={
+    handleLocalUpload:function(name,url){ 
+      playlist.push({name:name,url:url}); 
+      updateUI(); 
+    },
+    handleCommand:function(action,payload){
+      if(action==='play'){if(!isPlaying)togglePlay();}else if(action==='pause'){if(isPlaying)togglePlay();}else if(action==='toggle'){togglePlay();}
+      else if(action==='next'){playNext();}else if(action==='prev'){playPrev();}else if(action==='open'){window.showMusicModal&&window.showMusicModal();}
+      else if(action==='close'){window.hideMusicModal&&window.hideMusicModal();}else if(action==='mode-single'){playMode='single';updateUI();}
+      else if(action==='mode-list'){playMode='list';updateUI();}else if(action==='play-index'){playSong(payload);}
+      else if(action==='delete'){if(currentIndex===payload){audio.pause();isPlaying=false;currentIndex=-1;}else if(currentIndex>payload){currentIndex--;}playlist.splice(payload,1);updateUI();}
+      else if(action==='seek'){audio.currentTime=payload;}
+      else if(action==='set-volume'){ audio.volume = Math.max(0, Math.min(1, payload)); }
+      broadcastState();
+    },
+    getState:getState, forceBroadcast:function(){broadcastState();}
+  };
+  function broadcastState(){ if(connectedDevices.size===0)return; var str=JSON.stringify(getState()); connectedDevices.forEach(function(cid){if(connect){try{connect.Send(str,{connectId:cid});}catch(e){}}}); }
+  setInterval(broadcastState,1000); updateUI();
+})();
+
+(function(){
+var ADMIN_BASE_URL='https://2383534802.github.io/lufei-tv/remote.html', TV_CODE_KEY='lufei_tv_code', TV_CODE='';
+try{TV_CODE=localStorage.getItem(TV_CODE_KEY)||'';}catch(e){}
+if(!/^\d{6}$/.test(TV_CODE)){TV_CODE=String(Math.floor(100000+Math.random()*900000));try{localStorage.setItem(TV_CODE_KEY,TV_CODE);}catch(e){}}
+window.__TV_CODE=TV_CODE;
+function ensureQRCode(cb){ if(typeof QRCode!=='undefined')return cb(); var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js'; s.onload=cb; s.onerror=function(){showSmallToast('二维码组件加载失败');}; document.head.appendChild(s); }
+window.ensureQRCode=ensureQRCode;
+function deepClone(o){return JSON.parse(JSON.stringify(o));}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function toHex(c){if(typeof c!=='string')return '#00ff9d';if(/^#[0-9a-f]{6}$/i.test(c))return c;return '#00ff9d';}
+var DEFAULT_TV_CONFIG={brand:{name:'路飞电竞',sub:'LUFEI E-SPORTS',logo:'https://diskmirror.lingyuzhao.top/1193/Binary/logo.png'},service:{hours:'24H 全天候',wifiName:'路飞电竞',wifiPwd:'lufeidianjing',hotline:'166 0418 6135'},vip:[{pay:'39.9',bonus:'到手100元'},{pay:'100',bonus:'到手300元'},{pay:'200',bonus:'到手600元'},{pay:'500',bonus:'到手1600元'}],announcements:[{cls:'pink',text:'<span class="hl-pink">【消防公告】</span>公共场所（网吧）服务人员火灾处置流程'},{cls:'yellow',text:'<span class="hl-yellow">【一、第一时间发现火情】</span>立刻呼喊："着火了！请大家有序疏散！"，提醒在场顾客。'}],prices:{timer:{title:'计时价格',unit:'元 / 小时',cards:[{name:'大厅',price:'11',config:'9700X + RTX 5070',accent:'#00ff9d'},{name:'包间',price:'16.8',config:'7800X3D + RTX 5070',accent:'#00b3ff'},{name:'精品包',price:'17.8',config:'9800X3D + RTX 5070 <br>外设自选',accent:'#ff00e5'},{name:'豪华包',price:'21.8',config:'9800X3D + RTX 5080 <br>外设自选',accent:'#ff6d00'},{name:'至尊包',price:'26.8',config:'9800X3D + RTX 5080 <br>旗舰外设',accent:'#ffe600'},{name:'超豪华包',price:'32.8',config:'9800X3D + RTX 5080 <br>旗舰外设',accent:'#aa66ff'}]},night:{title:'包宿',unit:'21:55 — 07:00',cards:[{name:'大厅',price:'30',config:'9700X + 5070',accent:'#ff00e5'},{name:'包间',price:'40',config:'7800X3D + 5070',accent:'#00b3ff'},{name:'精品包',price:'50',config:'9800X3D + 5070',accent:'#ff00e5'},{name:'豪华包',price:'60',config:'9800X3D + 5080',accent:'#ff6d00'},{name:'至尊包',price:'70',config:'9800X3D + 5080',accent:'#ffe600'},{name:'超豪华包',price:'80',config:'9800X3D + RTX 5080',accent:'#aa66ff'}]},morning:{title:'包早',unit:'07:00 — 13:00',cards:[{name:'大厅',price:'12.9',config:'9700X + 5070',accent:'#00ff9d'},{name:'包间',price:'17.8',config:'7800X3D + 5070',accent:'#00b3ff'},{name:'精品双人包',price:'29.9',config:'9800X3D + 5070',accent:'#ff00e5'},{name:'精品单人包',price:'39.9',config:'9800X3D + 5080',accent:'#ff00e5'},{name:'豪华包',price:'49.9',config:'9800X3D + 5080',accent:'#ff6d00'}]}},bg:{default:'bjsp/常规时段.jpg',morning:'bjsp/包早时段.jpg',night:'bjsp/包宿时段.jpg',opacity:0.6},schedule:{morningStart:'07:00',morningEnd:'13:00',nightStart:'21:55',nightEnd:'07:00',morningBanner:'',nightBanner:'',syncMorningTime:false,syncNightTime:false},footer:{rules:['未成年人禁止入内','请携带有效身份证件登记','大厅禁止吸烟','妥善保管个人物品'],slogan:'路飞电竞 · 畅享游戏世界',phone:'166 0418 6135'}};
+function normalizeTvConfig(saved){
+  var out=deepClone(DEFAULT_TV_CONFIG); if(!saved||typeof saved!=='object')return out;
+  if(saved.brand)['name','sub','logo'].forEach(k=>{if(typeof saved.brand[k]==='string')out.brand[k]=saved.brand[k];});
+  if(saved.service)['hours','wifiName','wifiPwd','hotline'].forEach(k=>{if(typeof saved.service[k]==='string')out.service[k]=saved.service[k];});
+  if(Array.isArray(saved.vip))out.vip=saved.vip; if(Array.isArray(saved.announcements))out.announcements=saved.announcements;
+  if(saved.prices)['timer','night','morning'].forEach(k=>{if(saved.prices[k]){if(saved.prices[k].title)out.prices[k].title=saved.prices[k].title;if(saved.prices[k].unit)out.prices[k].unit=saved.prices[k].unit;if(Array.isArray(saved.prices[k].cards))out.prices[k].cards=saved.prices[k].cards;}});
+  if(saved.bg){['default','morning','night'].forEach(function(k){if(typeof saved.bg[k]==='string')out.bg[k]=saved.bg[k];});if(typeof saved.bg.opacity==='number')out.bg.opacity=saved.bg.opacity;}
+  if(saved.schedule){
+    out.schedule.morningStart = saved.schedule.morningStart || out.schedule.morningStart;
+    out.schedule.morningEnd = saved.schedule.morningEnd || out.schedule.morningEnd;
+    out.schedule.nightStart = saved.schedule.nightStart || out.schedule.nightStart;
+    out.schedule.nightEnd = saved.schedule.nightEnd || out.schedule.nightEnd;
+    out.schedule.morningBanner = saved.schedule.morningBanner || '';
+    out.schedule.nightBanner = saved.schedule.nightBanner || '';
+    out.schedule.syncMorningTime = saved.schedule.syncMorningTime === true;
+    out.schedule.syncNightTime = saved.schedule.syncNightTime === true;
+  }
+  if(saved.footer){if(Array.isArray(saved.footer.rules))out.footer.rules=saved.footer.rules;if(saved.footer.slogan)out.footer.slogan=saved.footer.slogan;if(saved.footer.phone)out.footer.phone=saved.footer.phone;}
+  return out;
+}
+var tvConfig=deepClone(DEFAULT_TV_CONFIG); window.tvConfig=tvConfig;
+function buildCardsHTML(cards,withCurrency){
+  return cards.map(c=>{var accent=toHex(c.accent);var priceHTML=withCurrency?'<div class="card-price"><small>￥</small>'+esc(c.price)+'</div><div class="card-unit"> /小时</div>':'<div class="card-price">'+esc(c.price)+'</div>';return '<div class="card-item" style="--card-accent:'+accent+';"><div class="card-name">'+esc(c.name)+'</div>'+priceHTML+'<div class="card-config">'+(c.config||'')+'</div></div>';}).join('');
+}
+function applyConfig(cfg){
+  tvConfig=normalizeTvConfig(cfg); window.tvConfig=tvConfig; window.__TV_SCHEDULE=tvConfig.schedule;
+  var el14=document.getElementById('v14');if(el14)el14.textContent=tvConfig.brand.name;
+  var el15=document.getElementById('v15');if(el15)el15.textContent=tvConfig.brand.sub;
+  document.querySelectorAll('.service-cell .v').forEach(el=>{var k=el.getAttribute('data-sv');if(k&&tvConfig.service[k])el.textContent=tvConfig.service[k];});
+  var vipList=document.querySelector('.vip-list');if(vipList)vipList.innerHTML=tvConfig.vip.map(v=>'<div class="vip-row"><span class="vip-pay">充 <b>'+esc(v.pay)+'</b> 元</span><span class="vip-bonus">'+esc(v.bonus)+'</span></div>').join('');
+  var listEl=document.getElementById('announceList');
+  if(listEl){listEl.style.animation='none';listEl.innerHTML='';var frag=document.createDocumentFragment();tvConfig.announcements.forEach(item=>{var div=document.createElement('div');div.className='announce-item '+(item.cls||'');div.innerHTML='<span class="announce-dot"></span><div class="announce-text">'+item.text+'</div>';frag.appendChild(div);});listEl.appendChild(frag);listEl.appendChild(frag.cloneNode(true));listEl.style.animation='';listEl.style.animationDuration=Math.max(20,tvConfig.announcements.length*4.5)+'s';var ac=document.getElementById('announceCount');if(ac)ac.textContent='共 '+tvConfig.announcements.length+' 条';}
+  
+  var nightEl=document.getElementById('nightSection'),morningEl=document.getElementById('morningSection');
+  var sch = tvConfig.schedule;
+  var nightUnit = sch.syncNightTime ? (sch.nightStart + ' — ' + sch.nightEnd) : tvConfig.prices.night.unit;
+  var morningUnit = sch.syncMorningTime ? (sch.morningStart + ' — ' + sch.morningEnd) : tvConfig.prices.morning.unit;
+
+  if(nightEl)nightEl.innerHTML='<div class="section-header"><span class="indicator" style="background:var(--neon-pink);"></span><span class="title purple">'+tvConfig.prices.night.title+'</span><span class="tag">'+nightUnit+'</span></div><div class="cards-row">'+buildCardsHTML(tvConfig.prices.night.cards,false)+'</div>';
+  if(morningEl)morningEl.innerHTML='<div class="section-header"><span class="indicator" style="background:var(--neon-yellow);"></span><span class="title yellow">'+tvConfig.prices.morning.title+'</span><span class="tag">'+morningUnit+'</span></div><div class="cards-row">'+buildCardsHTML(tvConfig.prices.morning.cards,false)+'</div>';
+  
+  if(timerSection)timerOriginalHTML='<div class="section-header"><span class="indicator"></span><span class="title">'+tvConfig.prices.timer.title+'</span><span class="tag">'+tvConfig.prices.timer.unit+'</span></div><div class="cards-row">'+buildCardsHTML(tvConfig.prices.timer.cards,true)+'</div>';
+  var fLeft=document.querySelector('.footer-left');if(fLeft)fLeft.innerHTML=tvConfig.footer.rules.map(t=>'<div class="footer-item"><span class="dot"></span>'+esc(t)+'</div>').join('');
+  var fSlogan=document.querySelector('.footer-slogan');if(fSlogan)fSlogan.textContent=tvConfig.footer.slogan;
+  var fPhone=document.querySelector('.footer-phone');if(fPhone)fPhone.textContent='📞 '+tvConfig.footer.phone;
+  if(typeof bgImage!=='undefined'&&bgImage)bgImage.style.opacity=tvConfig.bg.opacity;
+  IMAGE_FILES.default=tvConfig.bg.default;IMAGE_FILES.morning=tvConfig.bg.morning;IMAGE_FILES.night=tvConfig.bg.night;
+  if(currentState!=='default')applyPromotedLayout(currentState,false);else setDefaultLayout();
+  try{localStorage.setItem('lufei_tv_config',JSON.stringify(tvConfig));}catch(e){}
+}
+window.TVAdmin={handleMessage:function(m,replyFn){
+  if(!m||typeof m.type!=='string')return;var send=(typeof replyFn==='function')?replyFn:sendData;
+  if(m.type==='ping'){send(JSON.stringify({type:'pong',t:m.t}));return;}
+  if(m.type==='admin-request'){send(JSON.stringify({type:'admin-config',data:tvConfig,code:TV_CODE}));if(window.TVMusic&&window.TVMusic.getState)send(JSON.stringify(window.TVMusic.getState()));return;}
+  if(m.type==='admin-update'&&m.data){try{applyConfig(m.data);send(JSON.stringify({type:'admin-applied',ok:true}));}catch(e){send(JSON.stringify({type:'admin-applied',ok:false,error:String(e&&e.message||e)}));}}
+}};
+var savedCfg=null;try{var raw=localStorage.getItem('lufei_tv_config');if(raw)savedCfg=JSON.parse(raw);}catch(e){}
+applyConfig(savedCfg||deepClone(DEFAULT_TV_CONFIG));
+window.rebuildQR=function(){
+  ensureQRCode(function(){
+    var baseUrl='https://page.goose.cc.cd/s/dj',queryParams=[];
+    if(window.__TV_ID)queryParams.push('host='+encodeURIComponent(window.__TV_ID));
+    queryParams.push('caller=1');
+    var url=baseUrl+(queryParams.length>0?'?'+queryParams.join('&'):'');
+    var qrEl=document.getElementById('qrcode');if(!qrEl)return;qrEl.innerHTML='';
+    try{new QRCode(qrEl,{text:url,width:400,height:400,correctLevel:QRCode.CorrectLevel.M});}catch(e){qrEl.innerHTML='<div style="color:#f66;padding:60px 40px;font-size:24px;">二维码生成失败</div>';}
+  });
+};
+window.buildAdminQR=function(){
+  var tvId=window.__TV_ID;if(!tvId){var el0=document.getElementById('adminQrcode');if(el0)el0.innerHTML='<div style="color:#f66;padding:60px 40px;font-size:24px;">等待连接中，请稍后重试</div>';return false;}
+  ensureQRCode(function(){
+    var url=ADMIN_BASE_URL+'?host='+encodeURIComponent(tvId)+'&code='+encodeURIComponent(TV_CODE);
+    var el=document.getElementById('adminQrcode');if(!el)return;el.innerHTML='';
+    try{new QRCode(el,{text:url,width:400,height:400,correctLevel:QRCode.CorrectLevel.M});}catch(e){}
+    var codeEl=document.getElementById('adminCodeDisplay');if(codeEl)codeEl.textContent=TV_CODE;
+  });
+  return true;
+};
+setInterval(function(){ if(connect){ connect.getMyId(function(a){ var id=pickConnId(a); if(id)window.__TV_ID=id; }); } },8000);
+})();
+
+/* ==========================================================
+   极简粗暴保活 (旧代码机制优化版 - 智能排队)
+   ========================================================== */
+(function(){
+  'use strict';
+
+  var DB_NAME = 'lufei_tv_db', STORE = 'music', DB_VER = 1;
+  function openDB(){
+    return new Promise(function(res, rej){
+      var req = indexedDB.open(DB_NAME, DB_VER);
+      req.onupgradeneeded = function(e){
+        var db = e.target.result;
+        if(!db.objectStoreNames.contains(STORE)){
+          db.createObjectStore(STORE, { keyPath:'id', autoIncrement:true });
+        }
+      };
+      req.onsuccess = function(e){ res(e.target.result); };
+      req.onerror   = function(){ rej(req.error); };
+    });
+  }
+  function dbPut(blob, name){
+    return openDB().then(function(db){
+      return new Promise(function(res, rej){
+        var tx = db.transaction(STORE, 'readwrite');
+        tx.objectStore(STORE).add({ name:name, blob:blob, t:Date.now() });
+        tx.oncomplete = function(){ db.close(); res(); };
+        tx.onerror    = function(){ db.close(); rej(tx.error); };
+      });
+    });
+  }
+  function dbAll(){
+    return openDB().then(function(db){
+      return new Promise(function(res, rej){
+        var tx  = db.transaction(STORE, 'readonly');
+        var req = tx.objectStore(STORE).getAll();
+        req.onsuccess = function(){ db.close(); res(req.result || []); };
+        req.onerror   = function(){ db.close(); rej(req.error); };
+      });
+    });
+  }
+
+  var musicPatched = false;
+  function patchMusicPersist(){
+    if(musicPatched) return;
+    if(!window.TVMusic || typeof window.TVMusic.handleLocalUpload !== 'function') return;
+    musicPatched = true;
+    var orig = window.TVMusic.handleLocalUpload.bind(window.TVMusic);
+    window.TVMusic.handleLocalUpload = function(name, url){
+      if(window.__restoringMusic){ orig(name, url); return; }
+      fetch(url).then(function(r){ return r.blob(); })
+        .then(function(blob){ return dbPut(blob, name); })
+        .catch(function(e){})
+        .then(function(){ orig(name, url); });
+    };
+  }
+
+  function restoreMusic(){
+    if(!window.TVMusic || typeof window.TVMusic.handleLocalUpload !== 'function') return;
+    dbAll().then(function(rows){
+      if(!rows || rows.length === 0) return;
+      rows.sort(function(a,b){ return (a.t||0) - (b.t||0); });
+      var existed = {};
+      try{
+        var st = window.TVMusic.getState && window.TVMusic.getState();
+        if(st && st.playlist) st.playlist.forEach(function(p){ existed[p.name] = 1; });
+      }catch(e){}
+      window.__restoringMusic = true;
+      rows.forEach(function(row){
+        if(existed[row.name]) return;
+        try{
+          var url = URL.createObjectURL(row.blob);
+          window.TVMusic.handleLocalUpload(row.name, url);
+        }catch(e){}
+      });
+      window.__restoringMusic = false;
+    }).catch(function(e){ window.__restoringMusic = false; });
+  }
+
+  var ht = null;
+  window.__signalDead = false;
+  
+  // 🔥 心跳假死检测
+  setInterval(function(){
+    if(!window.connect || typeof window.connect.getMyId !== 'function') return;
+    if(ht) return;
+    var replied = false;
+    ht = setTimeout(function(){
+      if(!replied){
+        window.__signalDead = true;
+        var isBusy = window.__isCalling || window.__isMusicPlaying;
+        if (isBusy) {
+           showSmallToast('⚠️ 电视已离线，结束后自动重置');
+        }
+      }
+      ht = null;
+    }, 8000);
+    try{
+      window.connect.getMyId(function(){
+        replied = true;
+        window.__signalDead = false; // 成功回包，说明信令存活
+        if(ht){ clearTimeout(ht); ht = null; }
+      });
+    }catch(e){
+      if(ht){ clearTimeout(ht); ht = null; }
+    }
+  }, 30000);
+
+  // 🔥 实时监听：如果信令挂了，且不忙，立刻刷新
+  setInterval(function() {
+    if (window.__signalDead) {
+      var isBusy = window.__isCalling || window.__isMusicPlaying;
+      if (!isBusy) {
+        location.reload();
+      }
+    }
+  }, 3000);
+
+  // 🔥 5 分钟定时重置（智能顺延）
+  function checkAndReload() {
+    var isBusy = window.__isCalling || window.__isMusicPlaying;
+    
+    if (isBusy) {
+      console.log('[保活] 正在使用中，跳过重置，5分钟后再试');
+      setTimeout(checkAndReload, 5 * 60 * 1000);
+      return;
+    }
+
+    var el = document.createElement('div');
+    el.style.cssText = 'position:fixed;right:20px;bottom:80px;z-index:99999;background:rgba(0,0,0,0.8);color:#00ff9d;padding:8px 16px;border:1px solid #00ff9d;border-radius:6px;font-size:16px;pointer-events:none;font-family:Consolas;';
+    el.textContent = '🔄 重置中...';
+    document.body.appendChild(el);
+    setTimeout(function(){ location.reload(); }, 1000);
+  }
+
+  setTimeout(checkAndReload, 5 * 60 * 1000);
+
+  function boot(){
+    patchMusicPersist();
+    setTimeout(restoreMusic, 1500);
+    setInterval(patchMusicPersist, 2000);
+  }
+  if(document.readyState === 'complete') boot();
+  else window.addEventListener('load', boot);
+
+})();
+</script>
+</body>
+</html>
